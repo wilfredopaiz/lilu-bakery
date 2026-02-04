@@ -1,21 +1,5 @@
+import type { Order } from "@/lib/types"
 import { products } from "./products"
-
-export interface OrderItem {
-  productId: string
-  productName: string
-  quantity: number
-  price: number
-}
-
-export interface Order {
-  id: string
-  customerName: string
-  phoneNumber: string
-  status: "pending" | "paid"
-  items: OrderItem[]
-  total: number
-  createdAt: string
-}
 
 export const mockOrders: Order[] = [
   {

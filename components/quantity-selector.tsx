@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Minus, Plus } from "lucide-react"
 import { useCart } from "@/components/cart-provider"
-import type { Product } from "@/lib/products"
+import type { Product } from "@/lib/types"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "@/hooks/use-toast"
 

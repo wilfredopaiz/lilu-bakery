@@ -15,6 +15,8 @@ import { useEffect } from "react"
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total, clearCart } = useCart()
   const { t } = useLanguage()
+  const shippingFee = 120
+  const totalWithShipping = total + shippingFee
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -118,11 +120,11 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between text-sm md:text-base text-muted-foreground">
                     <span>{t.cart.shipping}</span>
-                    <span className="text-secondary-foreground">{t.cart.free}</span>
+                    <span className="text-secondary-foreground">{formatPrice(shippingFee)}</span>
                   </div>
                   <div className="border-t border-border pt-4 flex justify-between text-lg md:text-xl font-bold">
                     <span>{t.cart.total}</span>
-                    <span className="text-primary">{formatPrice(total)}</span>
+                    <span className="text-primary">{formatPrice(totalWithShipping)}</span>
                   </div>
                 </div>
 

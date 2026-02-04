@@ -5,17 +5,40 @@ import { Button } from "@/components/ui/button"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
-import { getFeaturedProducts } from "@/lib/products"
 import { useLanguage } from "@/components/language-provider"
 import { ArrowRight } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { supabaseBrowser } from "@/lib/supabase/client"
+import type { Product } from "@/lib/types"
 
 export default function HomePage() {
-  const featured = getFeaturedProducts()
   const { t } = useLanguage()
+  const [featured, setFeatured] = useState<Product[]>([])
 
   useEffect(() => {
     window.scrollTo(0, 0)
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadFeatured = async () => {
+      const { data, error } = await supabaseBrowser
+        .from("products")
+        .select("*")
+        .eq("featured", true)
+        .order("name", { ascending: true })
+
+      if (!error && data && isMounted) {
+        setFeatured(data as Product[])
+      }
+    }
+
+    loadFeatured()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   return (

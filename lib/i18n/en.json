@@ -51,7 +51,7 @@
     "orderSummary": "Order Summary",
     "subtotal": "Subtotal",
     "shipping": "Shipping",
-    "free": "Free",
+    "free": "L 120.00",
     "total": "Total",
     "proceedToCheckout": "Proceed to Checkout",
     "clearCart": "Clear Cart",
@@ -72,6 +72,7 @@
     "comingSoon": "Coming Soon",
     "orderSummary": "Order Summary",
     "placeOrder": "Place Order",
+    "processing": "Processing...",
     "total": "Total",
     "items": "items"
   },

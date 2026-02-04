@@ -1,13 +1,13 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Playfair_Display, Inter } from "next/font/google"
+import { Playfair_Display, Geist } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { CartProvider } from "@/components/cart-provider"
 import { LanguageProvider } from "@/components/language-provider"
 
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" })
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
 
 export const metadata: Metadata = {
   title: "Lilu's Bakery - Artisan Cookies & Brownies",
@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en" className={`${geist.variable} ${playfair.variable}`}>
       <body className={`font-sans antialiased`}>
         <LanguageProvider>
           <CartProvider>{children}</CartProvider>

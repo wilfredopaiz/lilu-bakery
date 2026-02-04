@@ -51,7 +51,7 @@
     "orderSummary": "Resumen del Pedido",
     "subtotal": "Subtotal",
     "shipping": "Envío",
-    "free": "Gratis",
+    "free": "L 120.00",
     "total": "Total",
     "proceedToCheckout": "Proceder al Pago",
     "clearCart": "Vaciar Carrito",
@@ -72,6 +72,7 @@
     "comingSoon": "Próximamente",
     "orderSummary": "Resumen del Pedido",
     "placeOrder": "Realizar Pedido",
+    "processing": "Procesando...",
     "total": "Total",
     "items": "artículos"
   },
@@ -150,3 +151,5 @@
     "english": "English"
   }
 }
+
+

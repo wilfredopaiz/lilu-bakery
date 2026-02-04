@@ -3,15 +3,17 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
-import { getProductsByCategory } from "@/lib/products"
 import { notFound, useParams } from "next/navigation"
 import { useLanguage } from "@/components/language-provider"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { supabaseBrowser } from "@/lib/supabase/client"
+import type { Product } from "@/lib/types"
 
 export default function CategoryPage() {
   const params = useParams()
   const slug = params.slug as string
   const { t } = useLanguage()
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -21,7 +23,28 @@ export default function CategoryPage() {
     notFound()
   }
 
-  const categoryProducts = getProductsByCategory(slug)
+  useEffect(() => {
+    let isMounted = true
+
+    const loadCategory = async () => {
+      const { data, error } = await supabaseBrowser
+        .from("products")
+        .select("*")
+        .eq("category", slug)
+        .order("name", { ascending: true })
+
+      if (!error && data && isMounted) {
+        setCategoryProducts(data as Product[])
+      }
+    }
+
+    loadCategory()
+
+    return () => {
+      isMounted = false
+    }
+  }, [slug])
+
   const title = slug === "cookies" ? t.home.cookiesTitle : t.home.browniesTitle
   const description = slug === "cookies" ? t.category.cookiesDesc : t.category.browniesDesc
 

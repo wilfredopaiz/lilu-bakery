@@ -18,30 +18,69 @@ import { Building2, CreditCard, ShoppingBag } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { formatPrice } from "@/lib/format-price"
+import { supabaseBrowser } from "@/lib/supabase/client"
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
   const { t } = useLanguage()
   const router = useRouter()
+  const shippingFee = 120
+  const totalWithShipping = total + shippingFee
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("bank-transfer")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !phone) return
-    
-    // Generate order number
-    const orderNumber = `LB-${Date.now().toString(36).toUpperCase()}`
-    
-    // Clear cart and redirect to confirmation with total
-    const orderTotal = total
+    if (items.length === 0) return
+
+    setIsSubmitting(true)
+    setErrorMessage("")
+
+    const { data } = await supabaseBrowser.auth.getSession()
+    const accessToken = data.session?.access_token
+
+    const response = await fetch("/api/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify({
+        customerName: name,
+        phoneNumber: phone,
+        paymentMethod,
+        currency: "HNL",
+        shippingFee,
+        items: items.map((item) => ({
+          productId: item.id,
+          productName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      }),
+    })
+
+    if (!response.ok) {
+      setErrorMessage("Unable to place order. Please try again.")
+      setIsSubmitting(false)
+      return
+    }
+
+    const payload = await response.json()
+    const orderTotal = Number(payload.total)
+    const orderNumber = payload.orderNumber as string
+
     clearCart()
     router.push(`/checkout/confirmation?order=${orderNumber}&total=${orderTotal.toFixed(2)}`)
+    setIsSubmitting(false)
   }
 
   if (items.length === 0) {
@@ -192,21 +231,25 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <span>{t.cart.shipping}</span>
-                      <span className="text-secondary-foreground">{t.cart.free}</span>
+                      <span className="text-secondary-foreground">{formatPrice(shippingFee)}</span>
                     </div>
                     <div className="border-t border-border pt-4 flex justify-between text-lg font-bold">
                       <span>{t.checkout.total}</span>
-                      <span className="text-primary">{formatPrice(total)}</span>
+                      <span className="text-primary">{formatPrice(totalWithShipping)}</span>
                     </div>
                   </div>
+
+                  {errorMessage && (
+                    <p className="text-sm text-destructive">{errorMessage}</p>
+                  )}
 
                   <Button 
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    disabled={!name || !phone}
+                    disabled={!name || !phone || isSubmitting}
                   >
-                    {t.checkout.placeOrder}
+                    {isSubmitting ? t.checkout.processing : t.checkout.placeOrder}
                   </Button>
                 </CardContent>
               </Card>
@@ -219,3 +262,5 @@ export default function CheckoutPage() {
     </div>
   )
 }
+
+

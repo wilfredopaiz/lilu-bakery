@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -42,9 +42,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { products, type Product } from "@/lib/products"
+import type { Order, Product } from "@/lib/types"
 import { formatPrice } from "@/lib/format-price"
-import { mockOrders, type Order } from "@/lib/mock-orders"
 import { getTranslations, type Language } from "@/lib/i18n"
 import {
   Package,
@@ -62,13 +61,19 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { supabaseBrowser } from "@/lib/supabase/client"
+import type { Session } from "@supabase/supabase-js"
 
 export default function DashboardPage() {
   const [language, setLanguage] = useState<Language>("es")
   const t = getTranslations(language)
+  const router = useRouter()
+  const [session, setSession] = useState<Session | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
 
-  const [productList, setProductList] = useState<Product[]>(products)
-  const [orders, setOrders] = useState<Order[]>(mockOrders)
+  const [productList, setProductList] = useState<Product[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [expandedOrders, setExpandedOrders] = useState<string[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -78,7 +83,99 @@ export default function DashboardPage() {
     description: "",
     price: "",
     category: "cookies" as "cookies" | "brownies",
+    image: "",
   })
+  const [newProductImageFile, setNewProductImageFile] = useState<File | null>(null)
+  const [editProductImageFile, setEditProductImageFile] = useState<File | null>(null)
+  const [isSavingProduct, setIsSavingProduct] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    supabaseBrowser.auth.getSession().then(({ data }) => {
+      if (isMounted) {
+        setSession(data.session)
+        setAuthChecked(true)
+      }
+    })
+
+    const { data: authListener } = supabaseBrowser.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession)
+      setAuthChecked(true)
+    })
+
+    return () => {
+      isMounted = false
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (authChecked && !session) {
+      router.push("/login")
+    }
+  }, [authChecked, session, router])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadProducts = async () => {
+      const response = await fetch("/api/admin/products")
+      if (!response.ok) return
+      const payload = await response.json()
+      const data = payload.products || []
+
+      if (isMounted) {
+        setProductList(data as Product[])
+      }
+    }
+
+    loadProducts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadOrders = async () => {
+      if (!session) return
+
+      const response = await fetch("/api/admin/orders")
+      if (!response.ok) return
+
+      const payload = await response.json()
+      const data = payload.orders || []
+
+      if (isMounted) {
+        const mapped = data.map((order: any) => ({
+          id: order.id,
+          orderNumber: order.order_number,
+          customerName: order.customer_name,
+          phoneNumber: order.phone_number,
+          status: order.status,
+          total: order.total,
+          createdAt: order.created_at,
+          items: (order.order_items || []).map((item: any) => ({
+            productId: item.product_id,
+            productName: item.product_name,
+            quantity: item.quantity,
+            price: item.unit_price,
+            lineTotal: item.line_total,
+          })),
+        }))
+        setOrders(mapped as Order[])
+      }
+    }
+
+    loadOrders()
+
+    return () => {
+      isMounted = false
+    }
+  }, [session])
 
   const cookieProducts = productList.filter((p) => p.category === "cookies")
   const brownieProducts = productList.filter((p) => p.category === "brownies")
@@ -89,35 +186,99 @@ export default function DashboardPage() {
     )
   }
 
-  const handleAddProduct = () => {
-    const product: Product = {
-      id: String(Date.now()),
-      name: newProduct.name,
-      description: newProduct.description,
-      price: parseFloat(newProduct.price),
-      category: newProduct.category,
-      image: "/chocolate-chip-cookies.png",
+  const uploadImage = async (file: File) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    const response = await fetch("/api/admin/upload", {
+      method: "POST",
+      body: formData,
+    })
+    if (!response.ok) {
+      throw new Error("Failed to upload image")
     }
-    setProductList([...productList, product])
-    setNewProduct({ name: "", description: "", price: "", category: "cookies" })
-    setIsAddDialogOpen(false)
+    const payload = await response.json()
+    return payload.url as string
   }
 
-  const handleEditProduct = () => {
+  const handleAddProduct = async () => {
+    if (!newProduct.name || !newProduct.description || !newProduct.price || !newProductImageFile) return
+    setIsSavingProduct(true)
+    try {
+      const imageUrl = await uploadImage(newProductImageFile)
+      const response = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newProduct.name,
+          description: newProduct.description,
+          price: parseFloat(newProduct.price),
+          category: newProduct.category,
+          image: imageUrl,
+        }),
+      })
+      if (!response.ok) return
+      const payload = await response.json()
+      setProductList([...productList, payload.product as Product])
+      setNewProduct({ name: "", description: "", price: "", category: "cookies", image: "" })
+      setNewProductImageFile(null)
+      setIsAddDialogOpen(false)
+    } finally {
+      setIsSavingProduct(false)
+    }
+  }
+
+  const handleEditProduct = async () => {
     if (!editingProduct) return
-    setProductList(productList.map((p) => (p.id === editingProduct.id ? editingProduct : p)))
-    setIsEditDialogOpen(false)
-    setEditingProduct(null)
+    setIsSavingProduct(true)
+    try {
+      let imageUrl = editingProduct.image
+      if (editProductImageFile) {
+        imageUrl = await uploadImage(editProductImageFile)
+      }
+
+      const response = await fetch("/api/admin/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingProduct.id,
+          name: editingProduct.name,
+          description: editingProduct.description,
+          price: editingProduct.price,
+          category: editingProduct.category,
+          image: imageUrl,
+        }),
+      })
+      if (!response.ok) return
+      const payload = await response.json()
+      setProductList(
+        productList.map((p) => (p.id === editingProduct.id ? (payload.product as Product) : p))
+      )
+      setIsEditDialogOpen(false)
+      setEditingProduct(null)
+      setEditProductImageFile(null)
+    } finally {
+      setIsSavingProduct(false)
+    }
   }
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this product?")
+    if (!confirmed) return
+    const response = await fetch("/api/admin/products", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    })
+    if (!response.ok) return
     setProductList(productList.filter((p) => p.id !== id))
   }
 
-  const handleChangeOrderStatus = (orderId: string, newStatus: "paid" | "pending") => {
+  const handleChangeOrderStatus = async (orderId: string, newStatus: "paid" | "pending") => {
     setOrders(
       orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
     )
+
+    await supabaseBrowser.from("orders").update({ status: newStatus }).eq("id", orderId)
   }
 
   const getTotalProducts = (order: Order) => {
@@ -186,22 +347,31 @@ export default function DashboardPage() {
                         }
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-description">{t.products.description}</Label>
-                      <Input
-                        id="edit-description"
-                        value={editingProduct.description}
-                        onChange={(e) =>
-                          setEditingProduct({
-                            ...editingProduct,
-                            description: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-price">{t.products.price}</Label>
-                      <Input
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-description">{t.products.description}</Label>
+                    <Input
+                      id="edit-description"
+                      value={editingProduct.description}
+                      onChange={(e) =>
+                        setEditingProduct({
+                          ...editingProduct,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-image">Image</Label>
+                    <Input
+                      id="edit-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setEditProductImageFile(e.target.files?.[0] ?? null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-price">{t.products.price}</Label>
+                    <Input
                         id="edit-price"
                         type="number"
                         step="0.01"
@@ -241,7 +411,9 @@ export default function DashboardPage() {
                   >
                     {t.products.cancel}
                   </Button>
-                  <Button onClick={handleEditProduct}>{t.products.save}</Button>
+                  <Button onClick={handleEditProduct} disabled={isSavingProduct}>
+                    {isSavingProduct ? "Saving..." : t.products.save}
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -297,11 +469,16 @@ export default function DashboardPage() {
                 <span className="hidden sm:inline">{t.dashboard.viewStore}</span>
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/login">
-                <LogOut className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{t.dashboard.logout}</span>
-              </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await supabaseBrowser.auth.signOut()
+                router.push("/login")
+              }}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">{t.dashboard.logout}</span>
             </Button>
           </div>
         </div>
@@ -353,20 +530,29 @@ export default function DashboardPage() {
                         placeholder={t.products.namePlaceholder}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">{t.products.description}</Label>
-                      <Input
-                        id="description"
-                        value={newProduct.description}
-                        onChange={(e) =>
-                          setNewProduct({ ...newProduct, description: e.target.value })
-                        }
-                        placeholder={t.products.descriptionPlaceholder}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="price">{t.products.price}</Label>
-                      <Input
+                  <div className="space-y-2">
+                    <Label htmlFor="description">{t.products.description}</Label>
+                    <Input
+                      id="description"
+                      value={newProduct.description}
+                      onChange={(e) =>
+                        setNewProduct({ ...newProduct, description: e.target.value })
+                      }
+                      placeholder={t.products.descriptionPlaceholder}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="image">Image</Label>
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setNewProductImageFile(e.target.files?.[0] ?? null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="price">{t.products.price}</Label>
+                    <Input
                         id="price"
                         type="number"
                         step="0.01"
@@ -394,17 +580,19 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button
-                      variant="outline"
-                      className="bg-transparent"
-                      onClick={() => setIsAddDialogOpen(false)}
-                    >
-                      {t.products.cancel}
-                    </Button>
-                    <Button onClick={handleAddProduct}>{t.products.add}</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  <Button
+                    variant="outline"
+                    className="bg-transparent"
+                    onClick={() => setIsAddDialogOpen(false)}
+                  >
+                    {t.products.cancel}
+                  </Button>
+                  <Button onClick={handleAddProduct} disabled={isSavingProduct}>
+                    {isSavingProduct ? "Saving..." : t.products.add}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             </div>
 
             {/* Cookies Section */}
