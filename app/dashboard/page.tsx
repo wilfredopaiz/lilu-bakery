@@ -65,6 +65,170 @@ import { useRouter } from "next/navigation"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import type { Session } from "@supabase/supabase-js"
 
+type Translations = ReturnType<typeof getTranslations>
+
+interface DashboardProductCardProps {
+  product: Product
+  t: Translations
+  editingProduct: Product | null
+  isEditDialogOpen: boolean
+  setIsEditDialogOpen: (open: boolean) => void
+  setEditingProduct: (product: Product | null) => void
+  setEditProductImageFile: (file: File | null) => void
+  isSavingProduct: boolean
+  handleEditProduct: () => void
+  handleDeleteProduct: (id: string) => void
+}
+
+function DashboardProductCard({
+  product,
+  t,
+  editingProduct,
+  isEditDialogOpen,
+  setIsEditDialogOpen,
+  setEditingProduct,
+  setEditProductImageFile,
+  isSavingProduct,
+  handleEditProduct,
+  handleDeleteProduct,
+}: DashboardProductCardProps) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative w-full sm:w-20 h-32 sm:h-20 rounded-lg overflow-hidden bg-muted shrink-0">
+            <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+              <div>
+                <h3 className="font-semibold truncate">{product.name}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant={product.category === "cookies" ? "default" : "secondary"}>
+                  {product.category === "cookies" ? t.products.cookie : t.products.brownie}
+                </Badge>
+                <span className="font-bold text-primary">{formatPrice(product.price)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex sm:flex-col gap-2 shrink-0">
+            <Dialog
+              open={isEditDialogOpen && editingProduct?.id === product.id}
+              onOpenChange={(open) => {
+                setIsEditDialogOpen(open)
+                if (!open) setEditingProduct(null)
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 sm:flex-none bg-transparent"
+                  onClick={() => setEditingProduct(product)}
+                >
+                  <Pencil className="h-4 w-4 sm:mr-0 mr-2" />
+                  <span className="sm:hidden">{t.products.edit}</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{t.products.editProduct}</DialogTitle>
+                  <DialogDescription>{t.products.editProductDesc}</DialogDescription>
+                </DialogHeader>
+                {editingProduct && (
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-name">{t.products.name}</Label>
+                      <Input
+                        id="edit-name"
+                        value={editingProduct.name}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-description">{t.products.description}</Label>
+                      <Input
+                        id="edit-description"
+                        value={editingProduct.description}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            description: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-image">Image</Label>
+                      <Input
+                        id="edit-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setEditProductImageFile(e.target.files?.[0] ?? null)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-price">{t.products.price}</Label>
+                      <Input
+                        id="edit-price"
+                        type="number"
+                        step="0.01"
+                        value={editingProduct.price}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            price: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-category">{t.products.category}</Label>
+                      <Select
+                        value={editingProduct.category}
+                        onValueChange={(value: "cookies" | "brownies") =>
+                          setEditingProduct({ ...editingProduct, category: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cookies">{t.products.cookies}</SelectItem>
+                          <SelectItem value="brownies">{t.products.brownies}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button variant="outline" className="bg-transparent" onClick={() => setIsEditDialogOpen(false)}>
+                    {t.products.cancel}
+                  </Button>
+                  <Button onClick={handleEditProduct} disabled={isSavingProduct}>
+                    {isSavingProduct ? "Saving..." : t.products.save}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 sm:flex-none text-destructive hover:text-destructive bg-transparent"
+              onClick={() => handleDeleteProduct(product.id)}
+            >
+              <Trash2 className="h-4 w-4 sm:mr-0 mr-2" />
+              <span className="sm:hidden">{t.products.delete}</span>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function DashboardPage() {
   const [language, setLanguage] = useState<Language>("es")
   const t = getTranslations(language)
@@ -285,153 +449,6 @@ export default function DashboardPage() {
     return order.items.reduce((sum, item) => sum + item.quantity, 0)
   }
 
-  const ProductCard = ({ product }: { product: Product }) => (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative w-full sm:w-20 h-32 sm:h-20 rounded-lg overflow-hidden bg-muted shrink-0">
-            <Image
-              src={product.image || "/placeholder.svg"}
-              alt={product.name}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-              <div>
-                <h3 className="font-semibold truncate">{product.name}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge variant={product.category === "cookies" ? "default" : "secondary"}>
-                  {product.category === "cookies" ? t.products.cookie : t.products.brownie}
-                </Badge>
-                <span className="font-bold text-primary">{formatPrice(product.price)}</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex sm:flex-col gap-2 shrink-0">
-            <Dialog
-              open={isEditDialogOpen && editingProduct?.id === product.id}
-              onOpenChange={(open) => {
-                setIsEditDialogOpen(open)
-                if (!open) setEditingProduct(null)
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 sm:flex-none bg-transparent"
-                  onClick={() => setEditingProduct(product)}
-                >
-                  <Pencil className="h-4 w-4 sm:mr-0 mr-2" />
-                  <span className="sm:hidden">{t.products.edit}</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{t.products.editProduct}</DialogTitle>
-                  <DialogDescription>{t.products.editProductDesc}</DialogDescription>
-                </DialogHeader>
-                {editingProduct && (
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-name">{t.products.name}</Label>
-                      <Input
-                        id="edit-name"
-                        value={editingProduct.name}
-                        onChange={(e) =>
-                          setEditingProduct({ ...editingProduct, name: e.target.value })
-                        }
-                      />
-                    </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-description">{t.products.description}</Label>
-                    <Input
-                      id="edit-description"
-                      value={editingProduct.description}
-                      onChange={(e) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          description: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-image">Image</Label>
-                    <Input
-                      id="edit-image"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setEditProductImageFile(e.target.files?.[0] ?? null)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-price">{t.products.price}</Label>
-                    <Input
-                        id="edit-price"
-                        type="number"
-                        step="0.01"
-                        value={editingProduct.price}
-                        onChange={(e) =>
-                          setEditingProduct({
-                            ...editingProduct,
-                            price: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-category">{t.products.category}</Label>
-                      <Select
-                        value={editingProduct.category}
-                        onValueChange={(value: "cookies" | "brownies") =>
-                          setEditingProduct({ ...editingProduct, category: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cookies">{t.products.cookies}</SelectItem>
-                          <SelectItem value="brownies">{t.products.brownies}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    className="bg-transparent"
-                    onClick={() => setIsEditDialogOpen(false)}
-                  >
-                    {t.products.cancel}
-                  </Button>
-                  <Button onClick={handleEditProduct} disabled={isSavingProduct}>
-                    {isSavingProduct ? "Saving..." : t.products.save}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 sm:flex-none text-destructive hover:text-destructive bg-transparent"
-              onClick={() => handleDeleteProduct(product.id)}
-            >
-              <Trash2 className="h-4 w-4 sm:mr-0 mr-2" />
-              <span className="sm:hidden">{t.products.delete}</span>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
@@ -610,7 +627,19 @@ export default function DashboardPage() {
               </div>
               <div className="grid gap-4">
                 {cookieProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <DashboardProductCard
+                    key={product.id}
+                    product={product}
+                    t={t}
+                    editingProduct={editingProduct}
+                    isEditDialogOpen={isEditDialogOpen}
+                    setIsEditDialogOpen={setIsEditDialogOpen}
+                    setEditingProduct={setEditingProduct}
+                    setEditProductImageFile={setEditProductImageFile}
+                    isSavingProduct={isSavingProduct}
+                    handleEditProduct={handleEditProduct}
+                    handleDeleteProduct={handleDeleteProduct}
+                  />
                 ))}
                 {cookieProducts.length === 0 && (
                   <p className="text-muted-foreground text-center py-8">
@@ -635,7 +664,19 @@ export default function DashboardPage() {
               </div>
               <div className="grid gap-4">
                 {brownieProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <DashboardProductCard
+                    key={product.id}
+                    product={product}
+                    t={t}
+                    editingProduct={editingProduct}
+                    isEditDialogOpen={isEditDialogOpen}
+                    setIsEditDialogOpen={setIsEditDialogOpen}
+                    setEditingProduct={setEditingProduct}
+                    setEditProductImageFile={setEditProductImageFile}
+                    isSavingProduct={isSavingProduct}
+                    handleEditProduct={handleEditProduct}
+                    handleDeleteProduct={handleDeleteProduct}
+                  />
                 ))}
                 {brownieProducts.length === 0 && (
                   <p className="text-muted-foreground text-center py-8">
