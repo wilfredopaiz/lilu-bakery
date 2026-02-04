@@ -1,0 +1,152 @@
+{
+  "nav": {
+    "home": "Home",
+    "laGalletondy": "La Galletondy",
+    "cookies": "Cookies",
+    "brownies": "Brownies",
+    "login": "Login"
+  },
+  "hero": {
+    "title1": "Baked with Love,",
+    "title2": "Crafted for Joy",
+    "description": "Indulge in our handcrafted cookies and brownies, made fresh daily with premium ingredients and a sprinkle of happiness in every bite.",
+    "shopNow": "Shop Now",
+    "browseCookies": "Browse Cookies"
+  },
+  "home": {
+    "bestsellers": "Our Bestsellers",
+    "bestsellersDesc": "Discover our most loved treats",
+    "viewAll": "View All Products",
+    "cookiesTitle": "Cookies",
+    "cookiesDesc": "Crispy, chewy, and utterly irresistible",
+    "exploreCookies": "Explore Cookies",
+    "browniesTitle": "Brownies",
+    "browniesDesc": "Rich, fudgy, and chocolatey perfection",
+    "exploreBrownies": "Explore Brownies",
+    "freshDaily": "Fresh Daily",
+    "freshDailyDesc": "Baked fresh every morning with premium ingredients",
+    "madeWithLove": "Made with Love",
+    "madeWithLoveDesc": "Every treat is handcrafted with care and attention",
+    "premiumQuality": "Premium Quality",
+    "premiumQualityDesc": "Only the finest ingredients make it into our recipes"
+  },
+  "category": {
+    "cookiesDesc": "Discover our collection of artisan cookies, from classic favorites to unique flavor combinations",
+    "browniesDesc": "Indulge in our rich and fudgy brownies, each one a chocolate lover's dream"
+  },
+  "product": {
+    "backToProducts": "Back",
+    "productDetails": "Product Details",
+    "madeFreshDaily": "Made fresh daily",
+    "premiumIngredients": "Premium ingredients",
+    "handcraftedWithLove": "Handcrafted with love",
+    "perfectForGifting": "Perfect for gifting",
+    "youMayAlsoLike": "You May Also Like"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "emptyDesc": "Looks like you haven't added any delicious treats yet!",
+    "startShopping": "Start Shopping",
+    "orderSummary": "Order Summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "free": "Free",
+    "total": "Total",
+    "proceedToCheckout": "Proceed to Checkout",
+    "clearCart": "Clear Cart",
+    "continueShopping": "Continue Shopping"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "contactInfo": "Contact Information",
+    "name": "Full Name",
+    "namePlaceholder": "Your full name",
+    "phone": "Phone Number",
+    "phonePlaceholder": "Your phone number",
+    "paymentMethod": "Payment Method",
+    "bankTransfer": "Bank Transfer",
+    "bankTransferDesc": "Pay via bank transfer",
+    "creditCard": "Credit Card",
+    "creditCardDesc": "Pay with your credit or debit card",
+    "comingSoon": "Coming Soon",
+    "orderSummary": "Order Summary",
+    "placeOrder": "Place Order",
+    "total": "Total",
+    "items": "items"
+  },
+  "confirmation": {
+    "title": "Order Saved!",
+    "pendingPayment": "Your order is pending payment",
+    "instructionsPart1": "To complete your order, make a bank transfer of",
+    "instructionsPart2": "to any of the following accounts:",
+    "accountHolder": "Account holder",
+    "accountNumber": "Account number",
+    "sendReceipt": "Once the transfer is complete, send the payment receipt to our WhatsApp:",
+    "sendReceiptButton": "Send Receipt via WhatsApp",
+    "orderNumber": "Order Number",
+    "includeOrderNumber": "Include your order number when sending the receipt",
+    "backToHome": "Back to Home"
+  },
+  "footer": {
+    "description": "Handcrafted with love, our artisan cookies and brownies are made fresh daily using premium ingredients. Each bite is a moment of pure indulgence.",
+    "shop": "Shop",
+    "allProducts": "All Products",
+    "connect": "Connect",
+    "rights": "All rights reserved."
+  },
+  "dashboard": {
+    "title": "Admin Dashboard",
+    "badge": "Dashboard",
+    "viewStore": "View Store",
+    "logout": "Logout"
+  },
+  "tabs": {
+    "products": "Products",
+    "orders": "Orders"
+  },
+  "products": {
+    "title": "Product Management",
+    "totalCount": "products total",
+    "addProduct": "Add Product",
+    "addNewProduct": "Add New Product",
+    "addNewProductDesc": "Fill in the details for the new product",
+    "editProduct": "Edit Product",
+    "editProductDesc": "Modify the product details",
+    "name": "Name",
+    "namePlaceholder": "Product name",
+    "description": "Description",
+    "descriptionPlaceholder": "Product description",
+    "price": "Price",
+    "category": "Category",
+    "cancel": "Cancel",
+    "add": "Add",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cookies": "Cookies",
+    "brownies": "Brownies",
+    "cookie": "Cookie",
+    "brownie": "Brownie"
+  },
+  "orders": {
+    "title": "Orders",
+    "totalCount": "orders total",
+    "paid": "Paid",
+    "pending": "Pending Payment",
+    "products": "products",
+    "orderDetail": "Order Details",
+    "product": "Product",
+    "quantity": "Quantity",
+    "unitPrice": "Unit Price",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "changeStatus": "Change Status",
+    "markAsPaid": "Mark as Paid",
+    "markAsPending": "Mark as Pending"
+  },
+  "language": {
+    "spanish": "Español",
+    "english": "English"
+  }
+}

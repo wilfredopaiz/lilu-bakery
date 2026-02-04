@@ -1,0 +1,152 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "laGalletondy": "La Galletondy",
+    "cookies": "Cookies",
+    "brownies": "Brownies",
+    "login": "Iniciar Sesión"
+  },
+  "hero": {
+    "title1": "Horneado con Amor,",
+    "title2": "Creado para la Alegría",
+    "description": "Disfruta de nuestras galletas y brownies artesanales, hechos frescos diariamente con ingredientes premium y una pizca de felicidad en cada bocado.",
+    "shopNow": "Comprar Ahora",
+    "browseCookies": "Ver Cookies"
+  },
+  "home": {
+    "bestsellers": "Nuestros Favoritos",
+    "bestsellersDesc": "Descubre nuestros productos más amados",
+    "viewAll": "Ver Todos los Productos",
+    "cookiesTitle": "Cookies",
+    "cookiesDesc": "Crujientes, suaves y absolutamente irresistibles",
+    "exploreCookies": "Explorar Cookies",
+    "browniesTitle": "Brownies",
+    "browniesDesc": "Ricos, húmedos y perfección de chocolate",
+    "exploreBrownies": "Explorar Brownies",
+    "freshDaily": "Frescos Diariamente",
+    "freshDailyDesc": "Horneados frescos cada mañana con ingredientes premium",
+    "madeWithLove": "Hechos con Amor",
+    "madeWithLoveDesc": "Cada producto está elaborado a mano con cuidado y atención",
+    "premiumQuality": "Calidad Premium",
+    "premiumQualityDesc": "Solo los mejores ingredientes entran en nuestras recetas"
+  },
+  "category": {
+    "cookiesDesc": "Descubre nuestra colección de galletas artesanales, desde favoritos clásicos hasta combinaciones de sabores únicos",
+    "browniesDesc": "Disfruta de nuestros brownies ricos y húmedos, cada uno es un sueño para los amantes del chocolate"
+  },
+  "product": {
+    "backToProducts": "Volver",
+    "productDetails": "Detalles del Producto",
+    "madeFreshDaily": "Hecho fresco diariamente",
+    "premiumIngredients": "Ingredientes premium",
+    "handcraftedWithLove": "Elaborado a mano con amor",
+    "perfectForGifting": "Perfecto para regalar",
+    "youMayAlsoLike": "También Te Puede Gustar"
+  },
+  "cart": {
+    "title": "Carrito de Compras",
+    "empty": "Tu carrito está vacío",
+    "emptyDesc": "¡Parece que aún no has agregado ningún delicioso producto!",
+    "startShopping": "Comenzar a Comprar",
+    "orderSummary": "Resumen del Pedido",
+    "subtotal": "Subtotal",
+    "shipping": "Envío",
+    "free": "Gratis",
+    "total": "Total",
+    "proceedToCheckout": "Proceder al Pago",
+    "clearCart": "Vaciar Carrito",
+    "continueShopping": "Seguir Comprando"
+  },
+  "checkout": {
+    "title": "Finalizar Compra",
+    "contactInfo": "Información de Contacto",
+    "name": "Nombre Completo",
+    "namePlaceholder": "Tu nombre completo",
+    "phone": "Número de Teléfono",
+    "phonePlaceholder": "Tu número de teléfono",
+    "paymentMethod": "Método de Pago",
+    "bankTransfer": "Transferencia Bancaria",
+    "bankTransferDesc": "Realiza el pago mediante transferencia bancaria",
+    "creditCard": "Tarjeta de Crédito",
+    "creditCardDesc": "Paga con tu tarjeta de crédito o débito",
+    "comingSoon": "Próximamente",
+    "orderSummary": "Resumen del Pedido",
+    "placeOrder": "Realizar Pedido",
+    "total": "Total",
+    "items": "artículos"
+  },
+  "confirmation": {
+    "title": "¡Pedido Guardado!",
+    "pendingPayment": "Tu pedido está pendiente de pago",
+    "instructionsPart1": "Para completar tu pedido, realiza una transferencia bancaria de",
+    "instructionsPart2": "a cualquiera de las siguientes cuentas:",
+    "accountHolder": "A nombre de",
+    "accountNumber": "Número de cuenta",
+    "sendReceipt": "Una vez realizada la transferencia, envía el comprobante de pago a nuestro WhatsApp:",
+    "sendReceiptButton": "Enviar Comprobante por WhatsApp",
+    "orderNumber": "Número de Pedido",
+    "includeOrderNumber": "Incluye tu número de pedido al enviar el comprobante",
+    "backToHome": "Volver al Inicio"
+  },
+  "footer": {
+    "description": "Hechos a mano con amor, nuestras galletas y brownies artesanales se hornean frescos diariamente con ingredientes premium. Cada bocado es un momento de pura indulgencia.",
+    "shop": "Tienda",
+    "allProducts": "Todos los Productos",
+    "connect": "Conectar",
+    "rights": "Todos los derechos reservados."
+  },
+  "dashboard": {
+    "title": "Panel de Administración",
+    "badge": "Dashboard",
+    "viewStore": "Ver Tienda",
+    "logout": "Cerrar Sesión"
+  },
+  "tabs": {
+    "products": "Productos",
+    "orders": "Pedidos"
+  },
+  "products": {
+    "title": "Gestión de Productos",
+    "totalCount": "productos en total",
+    "addProduct": "Agregar Producto",
+    "addNewProduct": "Agregar Nuevo Producto",
+    "addNewProductDesc": "Completa los datos del nuevo producto",
+    "editProduct": "Editar Producto",
+    "editProductDesc": "Modifica los datos del producto",
+    "name": "Nombre",
+    "namePlaceholder": "Nombre del producto",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Descripción del producto",
+    "price": "Precio",
+    "category": "Categoría",
+    "cancel": "Cancelar",
+    "add": "Agregar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "cookies": "Cookies",
+    "brownies": "Brownies",
+    "cookie": "Cookie",
+    "brownie": "Brownie"
+  },
+  "orders": {
+    "title": "Pedidos",
+    "totalCount": "pedidos en total",
+    "paid": "Pagado",
+    "pending": "Pendiente de Pago",
+    "products": "productos",
+    "orderDetail": "Detalle del Pedido",
+    "product": "Producto",
+    "quantity": "Cantidad",
+    "unitPrice": "Precio Unit.",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "changeStatus": "Cambiar Estado",
+    "markAsPaid": "Marcar como Pagado",
+    "markAsPending": "Marcar como Pendiente"
+  },
+  "language": {
+    "spanish": "Español",
+    "english": "English"
+  }
+}
