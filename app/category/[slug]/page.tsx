@@ -8,6 +8,9 @@ import { useLanguage } from "@/components/language-provider"
 import { useEffect, useState } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import type { Product } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { ArrowRightLeft } from "lucide-react"
 
 export default function CategoryPage() {
   const params = useParams()
@@ -47,15 +50,23 @@ export default function CategoryPage() {
 
   const title = slug === "cookies" ? t.home.cookiesTitle : t.home.browniesTitle
   const description = slug === "cookies" ? t.category.cookiesDesc : t.category.browniesDesc
+  const crossCategoryLabel = slug === "cookies" ? t.home.browniesTitle : t.home.cookiesTitle
+  const crossCategoryHref = slug === "cookies" ? "/category/brownies" : "/category/cookies"
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-1 container mx-auto px-4 py-12">
-        <div className="mb-12">
+        <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">{title}</h1>
           <p className="text-muted-foreground text-lg">{description}</p>
+          <Button asChild variant="outline" className="w-fit bg-transparent">
+            <Link href={crossCategoryHref}>
+              <ArrowRightLeft className="h-4 w-4 mr-2" />
+              {crossCategoryLabel}
+            </Link>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

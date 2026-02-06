@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
@@ -53,11 +54,13 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  MessageCircle,
   LogOut,
   Home,
   Globe,
   Cookie,
   Square,
+  Star,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -93,24 +96,35 @@ function DashboardProductCard({
   handleDeleteProduct,
 }: DashboardProductCardProps) {
   return (
-    <Card>
+    <Card className="border-border/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative w-full sm:w-20 h-32 sm:h-20 rounded-lg overflow-hidden bg-muted shrink-0">
-            <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+          <div className="relative w-full sm:w-28 h-36 sm:h-24 rounded-xl overflow-hidden bg-muted shrink-0">
+            <Image
+              src={product.image || "/placeholder.svg"}
+              alt={product.name}
+              fill
+              className="object-cover transition-transform duration-300 hover:scale-105"
+            />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-              <div>
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={product.category === "cookies" ? "default" : "secondary"}>
+                {product.category === "cookies" ? t.products.cookie : t.products.brownie}
+              </Badge>
+              {product.featured && (
+                <Badge variant="secondary" className="bg-amber-100 text-amber-800 gap-1">
+                  <Star className="h-3 w-3" />
+                  Featured
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 <h3 className="font-semibold truncate">{product.name}</h3>
                 <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge variant={product.category === "cookies" ? "default" : "secondary"}>
-                  {product.category === "cookies" ? t.products.cookie : t.products.brownie}
-                </Badge>
-                <span className="font-bold text-primary">{formatPrice(product.price)}</span>
-              </div>
+              <span className="font-semibold text-primary whitespace-nowrap">{formatPrice(product.price)}</span>
             </div>
           </div>
           <div className="flex sm:flex-col gap-2 shrink-0">
@@ -200,6 +214,16 @@ function DashboardProductCard({
                           <SelectItem value="brownies">{t.products.brownies}</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="edit-featured"
+                        checked={Boolean(editingProduct.featured)}
+                        onCheckedChange={(checked) =>
+                          setEditingProduct({ ...editingProduct, featured: Boolean(checked) })
+                        }
+                      />
+                      <Label htmlFor="edit-featured">Featured</Label>
                     </div>
                   </div>
                 )}
@@ -410,6 +434,7 @@ export default function DashboardPage() {
           price: editingProduct.price,
           category: editingProduct.category,
           image: imageUrl,
+          featured: Boolean(editingProduct.featured),
         }),
       })
       if (!response.ok) return
@@ -437,7 +462,10 @@ export default function DashboardPage() {
     setProductList(productList.filter((p) => p.id !== id))
   }
 
-  const handleChangeOrderStatus = async (orderId: string, newStatus: "paid" | "pending") => {
+  const handleChangeOrderStatus = async (
+    orderId: string,
+    newStatus: "paid" | "pending" | "abandoned" | "cancelled"
+  ) => {
     setOrders(
       orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
     )
@@ -504,8 +532,12 @@ export default function DashboardPage() {
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-serif font-bold mb-8">{t.dashboard.title}</h1>
 
-        <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              {t.dashboard.title}
+            </TabsTrigger>
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               {t.tabs.products}
@@ -515,6 +547,145 @@ export default function DashboardPage() {
               {t.tabs.orders}
             </TabsTrigger>
           </TabsList>
+
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">{t.dashboard.title}</h2>
+                <p className="text-sm text-muted-foreground">
+                  Resumen de ventas y productos
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardContent className="p-5 space-y-1">
+                  <p className="text-sm text-muted-foreground">Ventas pagadas</p>
+                  <p className="text-2xl font-semibold">
+                    {formatPrice(
+                      orders
+                        .filter((order) => order.status === "paid")
+                        .reduce((sum, order) => sum + order.total, 0)
+                    )}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5 space-y-1">
+                  <p className="text-sm text-muted-foreground">Ventas pendientes</p>
+                  <p className="text-2xl font-semibold">
+                    {formatPrice(
+                      orders
+                        .filter((order) => order.status === "pending")
+                        .reduce((sum, order) => sum + order.total, 0)
+                    )}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5 space-y-1">
+                  <p className="text-sm text-muted-foreground">Órdenes</p>
+                  <p className="text-2xl font-semibold">{orders.length}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5 space-y-1">
+                  <p className="text-sm text-muted-foreground">Productos</p>
+                  <p className="text-2xl font-semibold">{productList.length}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Órdenes por estado</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                  <span className="text-sm text-muted-foreground">{t.orders.paid}</span>
+                  <span className="text-sm font-semibold">
+                    {orders.filter((order) => order.status === "paid").length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                  <span className="text-sm text-muted-foreground">{t.orders.pending}</span>
+                  <span className="text-sm font-semibold">
+                    {orders.filter((order) => order.status === "pending").length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                  <span className="text-sm text-muted-foreground">{t.orders.abandoned}</span>
+                  <span className="text-sm font-semibold">
+                    {orders.filter((order) => order.status === "abandoned").length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                  <span className="text-sm text-muted-foreground">{t.orders.cancelled}</span>
+                  <span className="text-sm font-semibold">
+                    {orders.filter((order) => order.status === "cancelled").length}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Últimas órdenes</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {orders.slice(0, 5).map((order) => (
+                    <div key={order.id} className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">{order.customerName}</p>
+                        <p className="text-xs text-muted-foreground">{order.phoneNumber}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-primary">
+                          {formatPrice(order.total)}
+                        </span>
+                        <Button variant="outline" size="sm" className="bg-transparent" asChild>
+                          <Link
+                            href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
+                              `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {orders.length === 0 && (
+                    <p className="text-sm text-muted-foreground">Sin órdenes aún.</p>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Productos destacados</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {productList
+                    .filter((product) => product.featured)
+                    .slice(0, 5)
+                    .map((product) => (
+                      <div key={product.id} className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{product.name}</p>
+                        <span className="text-sm text-muted-foreground">{formatPrice(product.price)}</span>
+                      </div>
+                    ))}
+                  {productList.filter((product) => product.featured).length === 0 && (
+                    <p className="text-sm text-muted-foreground">Sin productos destacados.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-8">
@@ -609,82 +780,77 @@ export default function DashboardPage() {
                   </Button>
                 </DialogFooter>
               </DialogContent>
-            </Dialog>
+              </Dialog>
             </div>
 
-            {/* Cookies Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 border-b pb-3">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <Cookie className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">{t.products.cookies}</h3>
+            <Tabs defaultValue="cookies" className="space-y-4">
+              <TabsList className="flex w-fit">
+                <TabsTrigger value="cookies" className="gap-2">
+                  <Cookie className="h-4 w-4" />
+                  {t.products.cookies}
+                </TabsTrigger>
+                <TabsTrigger value="brownies" className="gap-2">
+                  <Square className="h-4 w-4" />
+                  {t.products.brownies}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="cookies" className="space-y-4">
+                <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     {cookieProducts.length} {t.products.totalCount}
                   </p>
                 </div>
-              </div>
-              <div className="grid gap-4">
-                {cookieProducts.map((product) => (
-                  <DashboardProductCard
-                    key={product.id}
-                    product={product}
-                    t={t}
-                    editingProduct={editingProduct}
-                    isEditDialogOpen={isEditDialogOpen}
-                    setIsEditDialogOpen={setIsEditDialogOpen}
-                    setEditingProduct={setEditingProduct}
-                    setEditProductImageFile={setEditProductImageFile}
-                    isSavingProduct={isSavingProduct}
-                    handleEditProduct={handleEditProduct}
-                    handleDeleteProduct={handleDeleteProduct}
-                  />
-                ))}
-                {cookieProducts.length === 0 && (
-                  <p className="text-muted-foreground text-center py-8">
-                    No cookies available
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Brownies Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 border-b pb-3">
-                <div className="p-2 rounded-full bg-amber-900/10">
-                  <Square className="h-5 w-5 text-amber-900" />
+                <div className="grid gap-4">
+                  {cookieProducts.map((product) => (
+                    <DashboardProductCard
+                      key={product.id}
+                      product={product}
+                      t={t}
+                      editingProduct={editingProduct}
+                      isEditDialogOpen={isEditDialogOpen}
+                      setIsEditDialogOpen={setIsEditDialogOpen}
+                      setEditingProduct={setEditingProduct}
+                      setEditProductImageFile={setEditProductImageFile}
+                      isSavingProduct={isSavingProduct}
+                      handleEditProduct={handleEditProduct}
+                      handleDeleteProduct={handleDeleteProduct}
+                    />
+                  ))}
+                  {cookieProducts.length === 0 && (
+                    <p className="text-muted-foreground text-center py-8">No cookies available</p>
+                  )}
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold">{t.products.brownies}</h3>
+              </TabsContent>
+
+              <TabsContent value="brownies" className="space-y-4">
+                <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     {brownieProducts.length} {t.products.totalCount}
                   </p>
                 </div>
-              </div>
-              <div className="grid gap-4">
-                {brownieProducts.map((product) => (
-                  <DashboardProductCard
-                    key={product.id}
-                    product={product}
-                    t={t}
-                    editingProduct={editingProduct}
-                    isEditDialogOpen={isEditDialogOpen}
-                    setIsEditDialogOpen={setIsEditDialogOpen}
-                    setEditingProduct={setEditingProduct}
-                    setEditProductImageFile={setEditProductImageFile}
-                    isSavingProduct={isSavingProduct}
-                    handleEditProduct={handleEditProduct}
-                    handleDeleteProduct={handleDeleteProduct}
-                  />
-                ))}
-                {brownieProducts.length === 0 && (
-                  <p className="text-muted-foreground text-center py-8">
-                    No brownies available
-                  </p>
-                )}
-              </div>
-            </div>
+                <div className="grid gap-4">
+                  {brownieProducts.map((product) => (
+                    <DashboardProductCard
+                      key={product.id}
+                      product={product}
+                      t={t}
+                      editingProduct={editingProduct}
+                      isEditDialogOpen={isEditDialogOpen}
+                      setIsEditDialogOpen={setIsEditDialogOpen}
+                      setEditingProduct={setEditingProduct}
+                      setEditProductImageFile={setEditProductImageFile}
+                      isSavingProduct={isSavingProduct}
+                      handleEditProduct={handleEditProduct}
+                      handleDeleteProduct={handleDeleteProduct}
+                    />
+                  ))}
+                  {brownieProducts.length === 0 && (
+                    <p className="text-muted-foreground text-center py-8">No brownies available</p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* Orders Tab */}
@@ -715,14 +881,24 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex items-center gap-3 flex-wrap">
                             <Badge
-                              variant={order.status === "paid" ? "default" : "secondary"}
+                              variant="secondary"
                               className={
                                 order.status === "paid"
-                                  ? "bg-green-500 hover:bg-green-600"
-                                  : "bg-amber-500 hover:bg-amber-600 text-white"
+                                  ? "bg-green-500 hover:bg-green-600 text-white"
+                                  : order.status === "pending"
+                                    ? "bg-amber-500 hover:bg-amber-600 text-white"
+                                    : order.status === "abandoned"
+                                      ? "bg-slate-400 hover:bg-slate-500 text-white"
+                                      : "bg-red-500 hover:bg-red-600 text-white"
                               }
                             >
-                              {order.status === "paid" ? t.orders.paid : t.orders.pending}
+                              {order.status === "paid"
+                                ? t.orders.paid
+                                : order.status === "pending"
+                                  ? t.orders.pending
+                                  : order.status === "abandoned"
+                                    ? t.orders.abandoned
+                                    : t.orders.cancelled}
                             </Badge>
                             <span className="text-sm text-muted-foreground">
                               {getTotalProducts(order)} {t.orders.products}
@@ -743,13 +919,36 @@ export default function DashboardPage() {
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h4 className="font-medium">{t.orders.orderDetail}</h4>
                             <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-transparent"
+                                asChild
+                              >
+                                <Link
+                                  href={`https://wa.me/${order.phoneNumber.replace(/\\D/g, "")}?text=${encodeURIComponent(
+                                    `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  <MessageCircle className="h-4 w-4 mr-2" />
+                                  WhatsApp
+                                </Link>
+                              </Button>
                               <span className="text-sm text-muted-foreground">
                                 {t.orders.changeStatus}:
                               </span>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="outline" size="sm" className="bg-transparent">
-                                    {order.status === "paid" ? t.orders.paid : t.orders.pending}
+                                    {order.status === "paid"
+                                      ? t.orders.paid
+                                      : order.status === "pending"
+                                        ? t.orders.pending
+                                        : order.status === "abandoned"
+                                          ? t.orders.abandoned
+                                          : t.orders.cancelled}
                                     <ChevronDown className="h-4 w-4 ml-2" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -769,6 +968,22 @@ export default function DashboardPage() {
                                     }}
                                   >
                                     {t.orders.markAsPending}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleChangeOrderStatus(order.id, "abandoned")
+                                    }}
+                                  >
+                                    {t.orders.abandoned}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleChangeOrderStatus(order.id, "cancelled")
+                                    }}
+                                  >
+                                    {t.orders.cancelled}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -797,6 +1012,24 @@ export default function DashboardPage() {
                                     </TableCell>
                                   </TableRow>
                                 ))}
+                                <TableRow>
+                                  <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
+                                    Subtotal
+                                  </TableCell>
+                                  <TableCell className="text-right font-medium text-muted-foreground">
+                                    {formatPrice(
+                                      order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
+                                    Envío
+                                  </TableCell>
+                                  <TableCell className="text-right font-medium text-muted-foreground">
+                                    {formatPrice(120)}
+                                  </TableCell>
+                                </TableRow>
                                 <TableRow>
                                   <TableCell
                                     colSpan={3}

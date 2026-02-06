@@ -10,8 +10,8 @@
     "title1": "Horneado con Amor,",
     "title2": "Creado para la Alegría",
     "description": "Disfruta de nuestras galletas y brownies artesanales, hechos frescos diariamente con ingredientes premium y una pizca de felicidad en cada bocado.",
-    "shopNow": "Comprar Ahora",
-    "browseCookies": "Ver Cookies"
+    "shopNow": "Ver Cookies",
+    "browseCookies": "Ver Brownies"
   },
   "home": {
     "bestsellers": "Nuestros Favoritos",
@@ -97,7 +97,7 @@
     "rights": "Todos los derechos reservados."
   },
   "dashboard": {
-    "title": "Panel de Administración",
+    "title": "Dashboard",
     "badge": "Dashboard",
     "viewStore": "Ver Tienda",
     "logout": "Cerrar Sesión"
@@ -135,6 +135,8 @@
     "totalCount": "pedidos en total",
     "paid": "Pagado",
     "pending": "Pendiente de Pago",
+    "abandoned": "Abandonado",
+    "cancelled": "Cancelado",
     "products": "productos",
     "orderDetail": "Detalle del Pedido",
     "product": "Producto",
@@ -151,5 +153,4 @@
     "english": "English"
   }
 }
-
 

@@ -23,7 +23,7 @@ export interface Order {
   orderNumber?: string
   customerName: string
   phoneNumber: string
-  status: "pending" | "paid"
+  status: "pending" | "paid" | "abandoned" | "cancelled"
   items: OrderItem[]
   total: number
   createdAt: string

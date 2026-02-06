@@ -10,8 +10,8 @@
     "title1": "Baked with Love,",
     "title2": "Crafted for Joy",
     "description": "Indulge in our handcrafted cookies and brownies, made fresh daily with premium ingredients and a sprinkle of happiness in every bite.",
-    "shopNow": "Shop Now",
-    "browseCookies": "Browse Cookies"
+    "shopNow": "Ver Cookies",
+    "browseCookies": "Ver Brownies"
   },
   "home": {
     "bestsellers": "Our Bestsellers",
@@ -97,7 +97,7 @@
     "rights": "All rights reserved."
   },
   "dashboard": {
-    "title": "Admin Dashboard",
+    "title": "Dashboard",
     "badge": "Dashboard",
     "viewStore": "View Store",
     "logout": "Logout"
@@ -135,6 +135,8 @@
     "totalCount": "orders total",
     "paid": "Paid",
     "pending": "Pending Payment",
+    "abandoned": "Abandoned",
+    "cancelled": "Cancelled",
     "products": "products",
     "orderDetail": "Order Details",
     "product": "Product",
