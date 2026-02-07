@@ -48,8 +48,9 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(0, 0, 0, 0)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -144,7 +145,7 @@ export default function CheckoutPage() {
     : ""
   const isClosedDate = shippingDate ? closedDates.includes(shippingDate) : false
   const disabledDates = [
-    { before: today },
+    { before: tomorrow },
     ...closedDates.map((date) => new Date(`${date}T00:00:00`)),
   ]
 

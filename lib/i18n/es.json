@@ -66,7 +66,7 @@
     "phonePlaceholder": "Tu número de teléfono",
     "shippingDate": "Fecha de envío",
     "shippingNotes": "Notas de envío",
-    "shippingNotesPlaceholder": "Detalles de entrega, horario preferido, referencias, etc.",
+    "shippingNotesPlaceholder": "Detalles de entrega, horario preferido (9am-12pm o 2pm-4pm), referencias, etc.",
     "paymentMethod": "Método de Pago",
     "bankTransfer": "Transferencia Bancaria",
     "bankTransferDesc": "Realiza el pago mediante transferencia bancaria",
