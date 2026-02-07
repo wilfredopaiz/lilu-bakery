@@ -27,6 +27,7 @@ export default function HomePage() {
         .from("products")
         .select("*")
         .eq("featured", true)
+        .contains("channels", ["ecommerce"])
         .order("name", { ascending: true })
 
       if (!error && data && isMounted) {

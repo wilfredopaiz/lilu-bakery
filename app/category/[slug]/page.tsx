@@ -34,6 +34,7 @@ export default function CategoryPage() {
         .from("products")
         .select("*")
         .eq("category", slug)
+        .contains("channels", ["ecommerce"])
         .order("name", { ascending: true })
 
       if (!error && data && isMounted) {

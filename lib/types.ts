@@ -8,6 +8,7 @@ export interface Product {
   category: ProductCategory
   image: string
   featured?: boolean
+  channels?: Array<"ecommerce" | "pos">
 }
 
 export interface OrderItem {

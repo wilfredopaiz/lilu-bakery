@@ -118,6 +118,12 @@ function DashboardProductCard({
                   Featured
                 </Badge>
               )}
+              {(product.channels ?? ["ecommerce", "pos"]).includes("ecommerce") && (
+                <Badge variant="outline">Ecommerce</Badge>
+              )}
+              {(product.channels ?? ["ecommerce", "pos"]).includes("pos") && (
+                <Badge variant="outline">POS</Badge>
+              )}
             </div>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -198,14 +204,14 @@ function DashboardProductCard({
                         }
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-category">{t.products.category}</Label>
-                      <Select
-                        value={editingProduct.category}
-                        onValueChange={(value: "cookies" | "brownies") =>
-                          setEditingProduct({ ...editingProduct, category: value })
-                        }
-                      >
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-category">{t.products.category}</Label>
+                    <Select
+                      value={editingProduct.category}
+                      onValueChange={(value: "cookies" | "brownies") =>
+                        setEditingProduct({ ...editingProduct, category: value })
+                      }
+                    >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -213,11 +219,48 @@ function DashboardProductCard({
                           <SelectItem value="cookies">{t.products.cookies}</SelectItem>
                           <SelectItem value="brownies">{t.products.brownies}</SelectItem>
                         </SelectContent>
-                      </Select>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Canales</Label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="edit-channel-ecommerce"
+                          checked={(editingProduct.channels ?? ["ecommerce", "pos"]).includes("ecommerce")}
+                          onCheckedChange={(checked) => {
+                            const current = new Set(editingProduct.channels ?? ["ecommerce", "pos"])
+                            if (checked) {
+                              current.add("ecommerce")
+                            } else {
+                              current.delete("ecommerce")
+                            }
+                            setEditingProduct({ ...editingProduct, channels: Array.from(current) as any })
+                          }}
+                        />
+                        <Label htmlFor="edit-channel-ecommerce">Ecommerce</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="edit-channel-pos"
+                          checked={(editingProduct.channels ?? ["ecommerce", "pos"]).includes("pos")}
+                          onCheckedChange={(checked) => {
+                            const current = new Set(editingProduct.channels ?? ["ecommerce", "pos"])
+                            if (checked) {
+                              current.add("pos")
+                            } else {
+                              current.delete("pos")
+                            }
+                            setEditingProduct({ ...editingProduct, channels: Array.from(current) as any })
+                          }}
+                        />
+                        <Label htmlFor="edit-channel-pos">POS</Label>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="edit-featured"
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="edit-featured"
                         checked={Boolean(editingProduct.featured)}
                         onCheckedChange={(checked) =>
                           setEditingProduct({ ...editingProduct, featured: Boolean(checked) })
@@ -272,6 +315,7 @@ export default function DashboardPage() {
     price: "",
     category: "cookies" as "cookies" | "brownies",
     image: "",
+    channels: ["ecommerce", "pos"] as Array<"ecommerce" | "pos">,
   })
   const [newProductImageFile, setNewProductImageFile] = useState<File | null>(null)
   const [editProductImageFile, setEditProductImageFile] = useState<File | null>(null)
@@ -372,8 +416,10 @@ export default function DashboardPage() {
     }
   }, [session])
 
-  const cookieProducts = productList.filter((p) => p.category === "cookies")
-  const brownieProducts = productList.filter((p) => p.category === "brownies")
+  const ecommerceProducts = productList.filter((p) => (p.channels ?? ["ecommerce", "pos"]).includes("ecommerce"))
+  const posProducts = productList.filter((p) => (p.channels ?? ["ecommerce", "pos"]).includes("pos"))
+  const cookieProducts = ecommerceProducts.filter((p) => p.category === "cookies")
+  const brownieProducts = ecommerceProducts.filter((p) => p.category === "brownies")
 
   const toggleOrderExpanded = (orderId: string) => {
     setExpandedOrders((prev) =>
@@ -409,12 +455,20 @@ export default function DashboardPage() {
           price: parseFloat(newProduct.price),
           category: newProduct.category,
           image: imageUrl,
+          channels: newProduct.channels,
         }),
       })
       if (!response.ok) return
       const payload = await response.json()
       setProductList([...productList, payload.product as Product])
-      setNewProduct({ name: "", description: "", price: "", category: "cookies", image: "" })
+      setNewProduct({
+        name: "",
+        description: "",
+        price: "",
+        category: "cookies",
+        image: "",
+        channels: ["ecommerce", "pos"],
+      })
       setNewProductImageFile(null)
       setIsAddDialogOpen(false)
     } finally {
@@ -442,6 +496,7 @@ export default function DashboardPage() {
           category: editingProduct.category,
           image: imageUrl,
           featured: Boolean(editingProduct.featured),
+          channels: editingProduct.channels ?? ["ecommerce", "pos"],
         }),
       })
       if (!response.ok) return
@@ -819,23 +874,60 @@ export default function DashboardPage() {
                         placeholder="0.00"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="category">{t.products.category}</Label>
-                      <Select
-                        value={newProduct.category}
-                        onValueChange={(value: "cookies" | "brownies") =>
-                          setNewProduct({ ...newProduct, category: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cookies">{t.products.cookies}</SelectItem>
-                          <SelectItem value="brownies">{t.products.brownies}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">{t.products.category}</Label>
+                    <Select
+                      value={newProduct.category}
+                      onValueChange={(value: "cookies" | "brownies") =>
+                        setNewProduct({ ...newProduct, category: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cookies">{t.products.cookies}</SelectItem>
+                        <SelectItem value="brownies">{t.products.brownies}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Canales</Label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="new-channel-ecommerce"
+                          checked={newProduct.channels.includes("ecommerce")}
+                          onCheckedChange={(checked) => {
+                            const current = new Set(newProduct.channels)
+                            if (checked) {
+                              current.add("ecommerce")
+                            } else {
+                              current.delete("ecommerce")
+                            }
+                            setNewProduct({ ...newProduct, channels: Array.from(current) as any })
+                          }}
+                        />
+                        <Label htmlFor="new-channel-ecommerce">Ecommerce</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="new-channel-pos"
+                          checked={newProduct.channels.includes("pos")}
+                          onCheckedChange={(checked) => {
+                            const current = new Set(newProduct.channels)
+                            if (checked) {
+                              current.add("pos")
+                            } else {
+                              current.delete("pos")
+                            }
+                            setNewProduct({ ...newProduct, channels: Array.from(current) as any })
+                          }}
+                        />
+                        <Label htmlFor="new-channel-pos">POS</Label>
+                      </div>
                     </div>
+                  </div>
                   </div>
                   <DialogFooter>
                   <Button
@@ -940,7 +1032,7 @@ export default function DashboardPage() {
                   <CardTitle className="text-base">Productos</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-3 sm:grid-cols-2">
-                  {productList.map((product) => (
+                  {posProducts.map((product) => (
                     <button
                       key={product.id}
                       type="button"

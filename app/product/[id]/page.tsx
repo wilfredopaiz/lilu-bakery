@@ -38,6 +38,7 @@ export default function ProductPage() {
         .from("products")
         .select("*")
         .eq("id", id)
+        .contains("channels", ["ecommerce"])
         .single()
 
       if (!error && data && isMounted) {
@@ -47,6 +48,7 @@ export default function ProductPage() {
           .from("products")
           .select("*")
           .eq("category", data.category)
+          .contains("channels", ["ecommerce"])
           .neq("id", data.id)
           .limit(4)
 
