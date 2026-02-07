@@ -518,6 +518,12 @@ export default function DashboardPage() {
     setOrders(mapped as Order[])
   }
 
+  const normalizeProduct = (product: any): Product => ({
+    ...product,
+    isSeasonal: product.is_seasonal ?? product.isSeasonal ?? false,
+    seasonKey: product.season_key ?? product.seasonKey ?? null,
+  })
+
   useEffect(() => {
     const isMountedRef = { current: true }
     loadOrders(isMountedRef)
@@ -699,7 +705,7 @@ export default function DashboardPage() {
       })
       if (!response.ok) return
       const payload = await response.json()
-      setProductList([...productList, payload.product as Product])
+      setProductList([...productList, normalizeProduct(payload.product)])
       setNewProduct({
         name: "",
         description: "",
@@ -757,7 +763,9 @@ export default function DashboardPage() {
       if (!response.ok) return
       const payload = await response.json()
       setProductList(
-        productList.map((p) => (p.id === editingProduct.id ? (payload.product as Product) : p))
+        productList.map((p) =>
+          p.id === editingProduct.id ? normalizeProduct(payload.product) : p
+        )
       )
       setIsEditDialogOpen(false)
       setEditingProduct(null)

@@ -21,7 +21,7 @@ export function Header() {
 
   const navigation = [
     { name: t.nav.home, href: "/" },
-    { name: t.nav.laGalletondy, href: "/galletondy" },
+    { name: t.nav.sanValentin, href: "/seasonal/valentin" },
     { name: t.nav.cookies, href: "/category/cookies" },
     { name: t.nav.brownies, href: "/category/brownies" },
   ]
