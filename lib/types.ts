@@ -9,6 +9,8 @@ export interface Product {
   image: string
   featured?: boolean
   channels?: Array<"ecommerce" | "pos">
+  isSeasonal?: boolean
+  seasonKey?: string | null
 }
 
 export interface OrderItem {

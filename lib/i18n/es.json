@@ -30,6 +30,13 @@
     "premiumQuality": "Calidad Premium",
     "premiumQualityDesc": "Solo los mejores ingredientes entran en nuestras recetas"
   },
+  "seasonal": {
+    "valentinBadge": "Colección de temporada",
+    "valentinTitle": "San Valentín",
+    "valentinDesc": "Edición limitada para un febrero más dulce. Lotes pequeños y sabores especiales solo por temporada.",
+    "valentinCta": "Ver colección",
+    "empty": "Aún no hay productos de temporada."
+  },
   "category": {
     "cookiesDesc": "Descubre nuestra colección de galletas artesanales, desde favoritos clásicos hasta combinaciones de sabores únicos",
     "browniesDesc": "Disfruta de nuestros brownies ricos y húmedos, cada uno es un sueño para los amantes del chocolate"

@@ -30,6 +30,13 @@
     "premiumQuality": "Premium Quality",
     "premiumQualityDesc": "Only the finest ingredients make it into our recipes"
   },
+  "seasonal": {
+    "valentinBadge": "Seasonal Collection",
+    "valentinTitle": "San Valentin",
+    "valentinDesc": "Limited treats for a sweeter February. Small batches, special flavors, only for this season.",
+    "valentinCta": "View Collection",
+    "empty": "No seasonal products available yet."
+  },
   "category": {
     "cookiesDesc": "Discover our collection of artisan cookies, from classic favorites to unique flavor combinations",
     "browniesDesc": "Indulge in our rich and fudgy brownies, each one a chocolate lover's dream"

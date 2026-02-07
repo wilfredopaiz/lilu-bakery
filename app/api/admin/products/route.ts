@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const body = await request.json()
 
-  const { name, description, price, category, image, featured = false, channels } = body ?? {}
+  const { name, description, price, category, image, featured = false, channels, isSeasonal, seasonKey } = body ?? {}
 
   if (!name || !description || !price || !category || !image) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 })
@@ -38,6 +38,8 @@ export async function POST(request: Request) {
       image,
       featured,
       channels,
+      is_seasonal: Boolean(isSeasonal),
+      season_key: isSeasonal ? seasonKey ?? "valentin" : null,
     })
     .select("*")
     .single()
@@ -51,10 +53,17 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const body = await request.json()
-  const { id, ...updates } = body ?? {}
+  const { id, isSeasonal, seasonKey, ...updates } = body ?? {}
 
   if (!id) {
     return NextResponse.json({ error: "Missing product id" }, { status: 400 })
+  }
+
+  if (typeof isSeasonal === "boolean") {
+    updates.is_seasonal = isSeasonal
+    updates.season_key = isSeasonal ? seasonKey ?? "valentin" : null
+  } else if (typeof seasonKey === "string") {
+    updates.season_key = seasonKey
   }
 
   const { data, error } = await supabaseAdmin

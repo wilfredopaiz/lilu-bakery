@@ -48,6 +48,7 @@ export default function ProductPage() {
           .from("products")
           .select("*")
           .eq("category", data.category)
+          .eq("is_seasonal", data.is_seasonal ?? false)
           .contains("channels", ["ecommerce"])
           .neq("id", data.id)
           .limit(4)

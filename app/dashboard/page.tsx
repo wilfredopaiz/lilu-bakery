@@ -162,6 +162,11 @@ function DashboardProductCard({
               {(product.channels ?? []).includes("pos") && (
                 <Badge variant="outline">POS</Badge>
               )}
+              {product.isSeasonal && product.seasonKey === "valentin" && (
+                <Badge variant="secondary" className="bg-pink-100 text-pink-800">
+                  San Valentín
+                </Badge>
+              )}
             </div>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -259,9 +264,9 @@ function DashboardProductCard({
                         </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Canales</Label>
-                    <div className="flex items-center gap-3">
+                    <div className="space-y-2">
+                      <Label>Canales</Label>
+                      <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
                         <Checkbox
                           id="edit-channel-ecommerce"
@@ -294,11 +299,25 @@ function DashboardProductCard({
                         />
                         <Label htmlFor="edit-channel-pos">POS</Label>
                       </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="edit-featured"
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="edit-seasonal-valentin"
+                        checked={Boolean(editingProduct.isSeasonal)}
+                        onCheckedChange={(checked) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            isSeasonal: Boolean(checked),
+                            seasonKey: checked ? "valentin" : null,
+                          })
+                        }
+                      />
+                      <Label htmlFor="edit-seasonal-valentin">San Valentín</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="edit-featured"
                         checked={Boolean(editingProduct.featured)}
                         onCheckedChange={(checked) =>
                           setEditingProduct({ ...editingProduct, featured: Boolean(checked) })
@@ -365,6 +384,8 @@ export default function DashboardPage() {
     category: "cookies" as "cookies" | "brownies",
     image: "",
     channels: ["ecommerce", "pos"] as Array<"ecommerce" | "pos">,
+    isSeasonal: false,
+    seasonKey: "valentin",
   })
   const [newProductImageFile, setNewProductImageFile] = useState<File | null>(null)
   const [editProductImageFile, setEditProductImageFile] = useState<File | null>(null)
@@ -426,7 +447,12 @@ export default function DashboardPage() {
       const data = payload.products || []
 
       if (isMounted) {
-        setProductList(data as Product[])
+        const mapped = data.map((product: any) => ({
+          ...product,
+          isSeasonal: product.is_seasonal ?? product.isSeasonal ?? false,
+          seasonKey: product.season_key ?? product.seasonKey ?? null,
+        }))
+        setProductList(mapped as Product[])
       }
     }
 
@@ -667,6 +693,8 @@ export default function DashboardPage() {
           category: newProduct.category,
           image: imageUrl,
           channels: newProduct.channels,
+          isSeasonal: newProduct.isSeasonal,
+          seasonKey: newProduct.seasonKey,
         }),
       })
       if (!response.ok) return
@@ -679,6 +707,8 @@ export default function DashboardPage() {
         category: "cookies",
         image: "",
         channels: ["ecommerce", "pos"],
+        isSeasonal: false,
+        seasonKey: "valentin",
       })
       setNewProductImageFile(null)
       setIsAddDialogOpen(false)
@@ -720,6 +750,8 @@ export default function DashboardPage() {
           image: imageUrl,
           featured: Boolean(editingProduct.featured),
           channels: editingProduct.channels ?? ["ecommerce", "pos"],
+          isSeasonal: Boolean(editingProduct.isSeasonal),
+          seasonKey: editingProduct.seasonKey ?? "valentin",
         }),
       })
       if (!response.ok) return
@@ -1496,6 +1528,20 @@ export default function DashboardPage() {
                         <Label htmlFor="new-channel-pos">POS</Label>
                       </div>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="new-seasonal-valentin"
+                      checked={Boolean(newProduct.isSeasonal)}
+                      onCheckedChange={(checked) =>
+                        setNewProduct({
+                          ...newProduct,
+                          isSeasonal: Boolean(checked),
+                          seasonKey: checked ? "valentin" : null,
+                        })
+                      }
+                    />
+                    <Label htmlFor="new-seasonal-valentin">San Valentín</Label>
                   </div>
                   </div>
                   <DialogFooter>

@@ -34,6 +34,7 @@ export default function CategoryPage() {
         .from("products")
         .select("*")
         .eq("category", slug)
+        .eq("is_seasonal", false)
         .contains("channels", ["ecommerce"])
         .order("name", { ascending: true })
 
