@@ -14,6 +14,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from "@/components/ui/badge"
+import { Calendar } from "@/components/ui/calendar"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Building2, CreditCard, ShoppingBag } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -24,23 +36,47 @@ export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
   const { t } = useLanguage()
   const router = useRouter()
-  const shippingFee = 120
+  const [shippingFee, setShippingFee] = useState(120)
+  const [closedDates, setClosedDates] = useState<string[]>([])
   const totalWithShipping = total + shippingFee
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
+  const [shippingDate, setShippingDate] = useState("")
+  const [selectedShippingDate, setSelectedShippingDate] = useState<Date | undefined>(undefined)
+  const [notes, setNotes] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("bank-transfer")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name || !phone) return
-    if (items.length === 0) return
+  useEffect(() => {
+    let isMounted = true
 
+    const loadConfig = async () => {
+      const response = await fetch("/api/admin/configs")
+      if (!response.ok) return
+      const payload = await response.json()
+      if (!isMounted) return
+      if (payload?.config) {
+        setShippingFee(Number(payload.config.shipping_fee ?? 120))
+        setClosedDates((payload.config.closed_dates ?? []) as string[])
+      }
+    }
+
+    loadConfig()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const placeOrder = async () => {
     setIsSubmitting(true)
     setErrorMessage("")
 
@@ -59,6 +95,8 @@ export default function CheckoutPage() {
         paymentMethod,
         currency: "HNL",
         shippingFee,
+        shippingDate,
+        notes,
         items: items.map((item) => ({
           productId: item.id,
           productName: item.name,
@@ -82,6 +120,33 @@ export default function CheckoutPage() {
     router.push(`/checkout/confirmation?order=${orderNumber}&total=${orderTotal.toFixed(2)}`)
     setIsSubmitting(false)
   }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name || !phone || !shippingDate) return
+    if (items.length === 0) return
+    if (closedDates.includes(shippingDate)) {
+      setErrorMessage("La fecha seleccionada no está disponible para envíos.")
+      return
+    }
+    setIsConfirmOpen(true)
+  }
+
+  const formatDateKey = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  const formattedShippingDate = selectedShippingDate
+    ? selectedShippingDate.toLocaleDateString("es-HN")
+    : ""
+  const isClosedDate = shippingDate ? closedDates.includes(shippingDate) : false
+  const disabledDates = [
+    { before: today },
+    ...closedDates.map((date) => new Date(`${date}T00:00:00`)),
+  ]
 
   if (items.length === 0) {
     return (
@@ -141,6 +206,40 @@ export default function CheckoutPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shipping-date">{t.checkout.shippingDate}</Label>
+                    <div className="rounded-lg border border-border bg-background p-3 flex justify-center">
+                      <Calendar
+                        mode="single"
+                        selected={selectedShippingDate}
+                        onSelect={(date) => {
+                          setSelectedShippingDate(date)
+                          setShippingDate(date ? formatDateKey(date) : "")
+                        }}
+                        disabled={disabledDates}
+                      />
+                    </div>
+                    {shippingDate && (
+                      <p className="text-xs text-muted-foreground">
+                        Fecha seleccionada: {formattedShippingDate}
+                      </p>
+                    )}
+                    {isClosedDate && (
+                      <p className="text-xs text-destructive">
+                        Esta fecha está cerrada. Selecciona otra fecha.
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shipping-notes">{t.checkout.shippingNotes}</Label>
+                    <Textarea
+                      id="shipping-notes"
+                      placeholder={t.checkout.shippingNotesPlaceholder}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={4}
                     />
                   </div>
                 </CardContent>
@@ -247,7 +346,7 @@ export default function CheckoutPage() {
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    disabled={!name || !phone || isSubmitting}
+                    disabled={!name || !phone || !shippingDate || isClosedDate || isSubmitting}
                   >
                     {isSubmitting ? t.checkout.processing : t.checkout.placeOrder}
                   </Button>
@@ -259,6 +358,66 @@ export default function CheckoutPage() {
       </main>
 
       <Footer />
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar pedido</AlertDialogTitle>
+            <AlertDialogDescription>
+              Revisa el resumen antes de enviar tu pedido.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Cliente</span>
+              <span className="font-medium">{name}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Teléfono</span>
+              <span className="font-medium">{phone}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Fecha de entrega</span>
+              <span className="font-medium">{formattedShippingDate}</span>
+            </div>
+            {notes.trim() && (
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Notas</p>
+                <p className="whitespace-pre-wrap">{notes}</p>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Hora aproximada de entrega: 10:00am a 12:00pm
+            </p>
+            <div className="border-t border-border pt-3 space-y-2">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>{t.cart.subtotal}</span>
+                <span>{formatPrice(total)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>{t.cart.shipping}</span>
+                <span>{formatPrice(shippingFee)}</span>
+              </div>
+              <div className="flex justify-between text-base font-semibold">
+                <span>{t.checkout.total}</span>
+                <span className="text-primary">{formatPrice(totalWithShipping)}</span>
+              </div>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setIsConfirmOpen(false)
+                await placeOrder()
+              }}
+              disabled={isSubmitting}
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

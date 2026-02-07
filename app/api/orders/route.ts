@@ -15,6 +15,8 @@ const orderSchema = z.object({
   paymentMethod: z.string().min(1),
   currency: z.string().min(1).default("HNL"),
   shippingFee: z.number().nonnegative().default(120),
+  shippingDate: z.string().min(1),
+  notes: z.string().optional(),
   items: z.array(orderItemSchema).min(1),
 })
 
@@ -27,7 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
-    const { customerName, phoneNumber, paymentMethod, currency, shippingFee, items } = parsed.data
+    const { customerName, phoneNumber, paymentMethod, currency, shippingFee, shippingDate, notes, items } = parsed.data
     const orderNumber = `LB-${Date.now().toString(36).toUpperCase()}`
 
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -55,6 +57,9 @@ export async function POST(request: Request) {
         total,
         currency,
         origin: "ecommerce",
+        shipping_date: shippingDate,
+        shipping_fee: shippingFee,
+        notes: notes?.trim() || null,
       })
       .select("id, order_number, total")
       .single()

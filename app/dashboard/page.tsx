@@ -83,6 +83,7 @@ import {
   Cookie,
   Square,
   Star,
+  Settings,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -383,6 +384,10 @@ export default function DashboardPage() {
   const [cancelPosOrderId, setCancelPosOrderId] = useState<string | null>(null)
   const [isReactivateDialogOpen, setIsReactivateDialogOpen] = useState(false)
   const [reactivateProductId, setReactivateProductId] = useState<string | null>(null)
+  const [configShippingFee, setConfigShippingFee] = useState(120)
+  const [configClosedDates, setConfigClosedDates] = useState<string[]>([])
+  const [newClosedDate, setNewClosedDate] = useState("")
+  const [isSavingConfig, setIsSavingConfig] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -432,6 +437,27 @@ export default function DashboardPage() {
     }
   }, [])
 
+  useEffect(() => {
+    let isMounted = true
+
+    const loadConfig = async () => {
+      const response = await fetch("/api/admin/configs")
+      if (!response.ok) return
+      const payload = await response.json()
+      if (!isMounted) return
+      if (payload?.config) {
+        setConfigShippingFee(Number(payload.config.shipping_fee ?? 120))
+        setConfigClosedDates((payload.config.closed_dates ?? []) as string[])
+      }
+    }
+
+    loadConfig()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   const loadOrders = async (isMountedRef?: { current: boolean }) => {
     if (!session) return
 
@@ -452,6 +478,9 @@ export default function DashboardPage() {
       origin: order.origin,
       total: order.total,
       createdAt: order.created_at,
+      shippingDate: order.shipping_date,
+      shippingFee: order.shipping_fee,
+      notes: order.notes,
       items: (order.order_items || []).map((item: any) => ({
         productId: item.product_id,
         productName: item.product_name,
@@ -785,6 +814,49 @@ export default function DashboardPage() {
     })
   }
 
+  const handleAddClosedDate = () => {
+    if (!newClosedDate) return
+    if (configClosedDates.includes(newClosedDate)) {
+      setNewClosedDate("")
+      return
+    }
+    setConfigClosedDates((prev) => [...prev, newClosedDate].sort())
+    setNewClosedDate("")
+  }
+
+  const handleRemoveClosedDate = (date: string) => {
+    setConfigClosedDates((prev) => prev.filter((item) => item !== date))
+  }
+
+  const handleSaveConfig = async () => {
+    setIsSavingConfig(true)
+    try {
+      const response = await fetch("/api/admin/configs", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shippingFee: Number(configShippingFee),
+          closedDates: configClosedDates,
+        }),
+      })
+      if (!response.ok) {
+        toast({
+          title: "Error al guardar",
+          description: "No se pudo actualizar la configuración.",
+          variant: "destructive",
+        })
+        return
+      }
+      toast({
+        title: "Configuración guardada",
+        description: "Los cambios se aplicaron correctamente.",
+        variant: "success",
+      })
+    } finally {
+      setIsSavingConfig(false)
+    }
+  }
+
   const updatePosQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       setPosItems((prev) => prev.filter((item) => item.product.id !== productId))
@@ -1016,7 +1088,7 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-serif font-bold mb-8">{t.dashboard.title}</h1>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-4">
+          <TabsList className="w-full max-w-full overflow-x-auto flex flex-nowrap gap-2">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               {t.dashboard.title}
@@ -1032,6 +1104,10 @@ export default function DashboardPage() {
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
               {t.tabs.orders}
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Configuración
             </TabsTrigger>
           </TabsList>
 
@@ -1662,6 +1738,13 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   {orders
                     .filter((order) => order.origin !== "pos")
+                    .slice()
+                    .sort((a, b) => {
+                      if (!a.shippingDate && !b.shippingDate) return 0
+                      if (!a.shippingDate) return 1
+                      if (!b.shippingDate) return -1
+                      return a.shippingDate.localeCompare(b.shippingDate)
+                    })
                     .map((order) => (
                       <Collapsible
                         key={order.id}
@@ -1675,8 +1758,17 @@ export default function DashboardPage() {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                                   <div>
                                     <CardTitle className="text-base">{order.customerName}</CardTitle>
-                                    <CardDescription>{order.phoneNumber}</CardDescription>
+                                    <CardDescription>
+                                      {order.phoneNumber}
+                                      {order.orderNumber ? ` · ${order.orderNumber}` : ` · ${order.id}`}
+                                    </CardDescription>
                                   </div>
+                                  {order.shippingDate && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Envío:{" "}
+                                      {new Date(`${order.shippingDate}T00:00:00`).toLocaleDateString("es-HN")}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-3 flex-wrap">
                                   <Badge
@@ -1836,6 +1928,12 @@ export default function DashboardPage() {
                                     </TableBody>
                                   </Table>
                                 </div>
+                                {order.notes && (
+                                  <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                                    <p className="text-xs font-medium text-muted-foreground">Notas</p>
+                                    <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
+                                  </div>
+                                )}
                               </div>
                             </CardContent>
                           </CollapsibleContent>
@@ -2062,6 +2160,83 @@ export default function DashboardPage() {
                 </div>
               </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Configuración</h2>
+                <p className="text-sm text-muted-foreground">
+                  Ajusta costos de envío y fechas cerradas.
+                </p>
+              </div>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Envío</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="shipping-fee">Costo de envío (L)</Label>
+                  <Input
+                    id="shipping-fee"
+                    type="number"
+                    min={0}
+                    step="1"
+                    value={configShippingFee}
+                    onChange={(e) => setConfigShippingFee(Number(e.target.value))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Fechas cerradas de envío</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    type="date"
+                    value={newClosedDate}
+                    onChange={(e) => setNewClosedDate(e.target.value)}
+                  />
+                  <Button type="button" onClick={handleAddClosedDate}>
+                    Agregar fecha
+                  </Button>
+                </div>
+                {configClosedDates.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No hay fechas cerradas configuradas.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {configClosedDates.map((date) => (
+                      <div
+                        key={date}
+                        className="flex items-center gap-2 rounded-full border border-border px-3 py-1 text-sm"
+                      >
+                        <span>{new Date(`${date}T00:00:00`).toLocaleDateString("es-HN")}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleRemoveClosedDate(date)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button onClick={handleSaveConfig} disabled={isSavingConfig}>
+                {isSavingConfig ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </main>

@@ -29,4 +29,7 @@ export interface Order {
   items: OrderItem[]
   total: number
   createdAt: string
+  shippingDate?: string | null
+  shippingFee?: number
+  notes?: string | null
 }
