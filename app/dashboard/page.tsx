@@ -67,6 +67,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import type { Session } from "@supabase/supabase-js"
+import { useToast } from "@/hooks/use-toast"
 
 type Translations = ReturnType<typeof getTranslations>
 
@@ -302,6 +303,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [session, setSession] = useState<Session | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const { toast } = useToast()
 
   const [productList, setProductList] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -326,6 +328,11 @@ export default function DashboardPage() {
     Array<{ product: Product; quantity: number }>
   >([])
   const [isSavingPosOrder, setIsSavingPosOrder] = useState(false)
+  const [isEditingPosOrder, setIsEditingPosOrder] = useState(false)
+  const [posEditOrder, setPosEditOrder] = useState<Order | null>(null)
+  const [posEditItems, setPosEditItems] = useState<Array<{ product: Product; quantity: number }>>([])
+  const [posEditCustomerName, setPosEditCustomerName] = useState("")
+  const [posEditPhoneNumber, setPosEditPhoneNumber] = useState("")
 
   useEffect(() => {
     let isMounted = true
@@ -375,51 +382,49 @@ export default function DashboardPage() {
     }
   }, [])
 
+  const loadOrders = async (isMountedRef?: { current: boolean }) => {
+    if (!session) return
+
+    const response = await fetch("/api/admin/orders")
+    if (!response.ok) return
+
+    const payload = await response.json()
+    const data = payload.orders || []
+
+    if (isMountedRef?.current === false) return
+
+    const mapped = data.map((order: any) => ({
+      id: order.id,
+      orderNumber: order.order_number,
+      customerName: order.customer_name,
+      phoneNumber: order.phone_number,
+      status: order.status,
+      origin: order.origin,
+      total: order.total,
+      createdAt: order.created_at,
+      items: (order.order_items || []).map((item: any) => ({
+        productId: item.product_id,
+        productName: item.product_name,
+        quantity: item.quantity,
+        price: item.unit_price,
+        lineTotal: item.line_total,
+      })),
+    }))
+    setOrders(mapped as Order[])
+  }
+
   useEffect(() => {
-    let isMounted = true
-
-    const loadOrders = async () => {
-      if (!session) return
-
-      const response = await fetch("/api/admin/orders")
-      if (!response.ok) return
-
-      const payload = await response.json()
-      const data = payload.orders || []
-
-      if (isMounted) {
-        const mapped = data.map((order: any) => ({
-          id: order.id,
-          orderNumber: order.order_number,
-          customerName: order.customer_name,
-          phoneNumber: order.phone_number,
-          status: order.status,
-          origin: order.origin,
-          total: order.total,
-          createdAt: order.created_at,
-          items: (order.order_items || []).map((item: any) => ({
-            productId: item.product_id,
-            productName: item.product_name,
-            quantity: item.quantity,
-            price: item.unit_price,
-            lineTotal: item.line_total,
-          })),
-        }))
-        setOrders(mapped as Order[])
-      }
-    }
-
-    loadOrders()
-
+    const isMountedRef = { current: true }
+    loadOrders(isMountedRef)
     return () => {
-      isMounted = false
+      isMountedRef.current = false
     }
   }, [session])
 
   const ecommerceProducts = productList.filter((p) => (p.channels ?? ["ecommerce", "pos"]).includes("ecommerce"))
   const posProducts = productList.filter((p) => (p.channels ?? ["ecommerce", "pos"]).includes("pos"))
-  const cookieProducts = ecommerceProducts.filter((p) => p.category === "cookies")
-  const brownieProducts = ecommerceProducts.filter((p) => p.category === "brownies")
+  const cookieProducts = productList.filter((p) => p.category === "cookies")
+  const brownieProducts = productList.filter((p) => p.category === "brownies")
 
   const toggleOrderExpanded = (orderId: string) => {
     setExpandedOrders((prev) =>
@@ -442,7 +447,22 @@ export default function DashboardPage() {
   }
 
   const handleAddProduct = async () => {
-    if (!newProduct.name || !newProduct.description || !newProduct.price || !newProductImageFile) return
+    if (!newProduct.name || !newProduct.description || !newProduct.price || !newProductImageFile) {
+      toast({
+        title: "Faltan datos",
+        description: "Nombre, descripción, precio e imagen son obligatorios.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (newProduct.channels.length === 0) {
+      toast({
+        title: "Selecciona canales",
+        description: "Elige al menos un canal de venta (Ecommerce o POS).",
+        variant: "destructive",
+      })
+      return
+    }
     setIsSavingProduct(true)
     try {
       const imageUrl = await uploadImage(newProductImageFile)
@@ -471,6 +491,10 @@ export default function DashboardPage() {
       })
       setNewProductImageFile(null)
       setIsAddDialogOpen(false)
+      toast({
+        title: "Producto creado",
+        description: "El producto se guardó correctamente.",
+      })
     } finally {
       setIsSavingProduct(false)
     }
@@ -478,6 +502,22 @@ export default function DashboardPage() {
 
   const handleEditProduct = async () => {
     if (!editingProduct) return
+    if (!editingProduct.description || !editingProduct.name || !editingProduct.price) {
+      toast({
+        title: "Faltan datos",
+        description: "Nombre, descripción y precio son obligatorios.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (!editingProduct.channels || editingProduct.channels.length === 0) {
+      toast({
+        title: "Selecciona canales",
+        description: "Elige al menos un canal de venta (Ecommerce o POS).",
+        variant: "destructive",
+      })
+      return
+    }
     setIsSavingProduct(true)
     try {
       let imageUrl = editingProduct.image
@@ -507,6 +547,10 @@ export default function DashboardPage() {
       setIsEditDialogOpen(false)
       setEditingProduct(null)
       setEditProductImageFile(null)
+      toast({
+        title: "Producto actualizado",
+        description: "El producto se guardó correctamente.",
+      })
     } finally {
       setIsSavingProduct(false)
     }
@@ -570,6 +614,11 @@ export default function DashboardPage() {
     0
   )
 
+  const posEditSubtotal = posEditItems.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  )
+
   const handleCreatePosOrder = async () => {
     if (posItems.length === 0) return
     setIsSavingPosOrder(true)
@@ -589,13 +638,114 @@ export default function DashboardPage() {
           })),
         }),
       })
-      if (!response.ok) return
+      if (!response.ok) {
+        toast({
+          title: "Error al guardar",
+          description: "No se pudo registrar la venta POS.",
+          variant: "destructive",
+        })
+        return
+      }
       setPosCustomerName("")
       setPosPhoneNumber("")
       setPosItems([])
+      await loadOrders()
+      toast({
+        title: "Venta registrada",
+        description: "La venta POS se guardó correctamente.",
+      })
     } finally {
       setIsSavingPosOrder(false)
     }
+  }
+
+  const openPosEdit = (order: Order) => {
+    const items = order.items
+      .map((item) => {
+        const product = productList.find((p) => p.id === item.productId)
+        if (!product) return null
+        return { product, quantity: item.quantity }
+      })
+      .filter(Boolean) as Array<{ product: Product; quantity: number }>
+
+    setPosEditOrder(order)
+    setPosEditItems(items)
+    setPosEditCustomerName(order.customerName)
+    setPosEditPhoneNumber(order.phoneNumber)
+    setIsEditingPosOrder(true)
+  }
+
+  const updatePosEditQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setPosEditItems((prev) => prev.filter((item) => item.product.id !== productId))
+      return
+    }
+    setPosEditItems((prev) =>
+      prev.map((item) =>
+        item.product.id === productId ? { ...item, quantity } : item
+      )
+    )
+  }
+
+  const handleSavePosEdit = async () => {
+    if (!posEditOrder) return
+    setIsSavingPosOrder(true)
+    try {
+      const response = await fetch("/api/admin/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: posEditOrder.id,
+          customerName: posEditCustomerName || "Cliente POS",
+          phoneNumber: posEditPhoneNumber || "0",
+          items: posEditItems.map((item) => ({
+            productId: item.product.id,
+            productName: item.product.name,
+            quantity: item.quantity,
+            price: item.product.price,
+          })),
+        }),
+      })
+      if (!response.ok) {
+        toast({
+          title: "Error al actualizar",
+          description: "No se pudo actualizar la venta POS.",
+          variant: "destructive",
+        })
+        return
+      }
+      setIsEditingPosOrder(false)
+      setPosEditOrder(null)
+      setPosEditItems([])
+      await loadOrders()
+      toast({
+        title: "Venta actualizada",
+        description: "Los cambios se guardaron correctamente.",
+      })
+    } finally {
+      setIsSavingPosOrder(false)
+    }
+  }
+
+  const handleCancelPosOrder = async (orderId: string) => {
+    const response = await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: orderId, status: "cancelled" }),
+    })
+    if (!response.ok) {
+      toast({
+        title: "Error al cancelar",
+        description: "No se pudo cancelar la venta.",
+        variant: "destructive",
+      })
+      return
+    }
+    await loadOrders()
+    toast({
+      title: "Venta cancelada",
+      description: "La venta se marcó como cancelada.",
+    })
   }
 
   return (
@@ -771,17 +921,19 @@ export default function DashboardPage() {
                         <span className="text-sm font-semibold text-primary">
                           {formatPrice(order.total)}
                         </span>
-                        <Button variant="outline" size="sm" className="bg-transparent" asChild>
-                          <Link
-                            href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
-                              `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
-                            )}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Link>
-                        </Button>
+                        {order.phoneNumber !== "0" && (
+                          <Button variant="outline" size="sm" className="bg-transparent" asChild>
+                            <Link
+                              href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
+                              )}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1224,18 +1376,20 @@ export default function DashboardPage() {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                   <h4 className="font-medium">{t.orders.orderDetail}</h4>
                                   <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" className="bg-transparent" asChild>
-                                      <Link
-                                        href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                          `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
-                                        )}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                      >
-                                        <MessageCircle className="h-4 w-4 mr-2" />
-                                        WhatsApp
-                                      </Link>
-                                    </Button>
+                                    {order.phoneNumber !== "0" && (
+                                      <Button variant="outline" size="sm" className="bg-transparent" asChild>
+                                        <Link
+                                          href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                            `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
+                                          )}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          <MessageCircle className="h-4 w-4 mr-2" />
+                                          WhatsApp
+                                        </Link>
+                                      </Button>
+                                    )}
                                     <span className="text-sm text-muted-foreground">
                                       {t.orders.changeStatus}:
                                     </span>
@@ -1399,6 +1553,28 @@ export default function DashboardPage() {
                                   ) : (
                                     <ChevronDown className="h-5 w-5 text-muted-foreground" />
                                   )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-transparent"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openPosEdit(order)
+                                    }}
+                                  >
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-transparent text-destructive hover:text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleCancelPosOrder(order.id)
+                                    }}
+                                  >
+                                    Cancelar
+                                  </Button>
                                 </div>
                               </div>
                             </CardHeader>
@@ -1409,18 +1585,20 @@ export default function DashboardPage() {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                   <h4 className="font-medium">{t.orders.orderDetail}</h4>
                                   <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" className="bg-transparent" asChild>
-                                      <Link
-                                        href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                          `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
-                                        )}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                      >
-                                        <MessageCircle className="h-4 w-4 mr-2" />
-                                        WhatsApp
-                                      </Link>
-                                    </Button>
+                                    {order.phoneNumber !== "0" && (
+                                      <Button variant="outline" size="sm" className="bg-transparent" asChild>
+                                        <Link
+                                          href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                            `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
+                                          )}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          <MessageCircle className="h-4 w-4 mr-2" />
+                                          WhatsApp
+                                        </Link>
+                                      </Button>
+                                    )}
                                     <span className="text-sm text-muted-foreground">
                                       {t.orders.changeStatus}:
                                     </span>
@@ -1505,14 +1683,7 @@ export default function DashboardPage() {
                                           )}
                                         </TableCell>
                                       </TableRow>
-                                      <TableRow>
-                                        <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
-                                          Envio
-                                        </TableCell>
-                                        <TableCell className="text-right font-medium text-muted-foreground">
-                                          {formatPrice(120)}
-                                        </TableCell>
-                                      </TableRow>
+
                                       <TableRow>
                                         <TableCell colSpan={3} className="text-right font-bold">
                                           {t.orders.total}
@@ -1536,9 +1707,88 @@ export default function DashboardPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog open={isEditingPosOrder} onOpenChange={setIsEditingPosOrder}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar venta POS</DialogTitle>
+            <DialogDescription>Actualiza los datos y productos vendidos.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="pos-edit-name">Cliente</Label>
+              <Input
+                id="pos-edit-name"
+                value={posEditCustomerName}
+                onChange={(e) => setPosEditCustomerName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pos-edit-phone">Teléfono</Label>
+              <Input
+                id="pos-edit-phone"
+                value={posEditPhoneNumber}
+                onChange={(e) => setPosEditPhoneNumber(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium">Productos</p>
+              {posEditItems.length === 0 && (
+                <p className="text-sm text-muted-foreground">Agrega productos para esta venta.</p>
+              )}
+              {posEditItems.map((item) => (
+                <div key={item.product.id} className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{item.product.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatPrice(item.product.price)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updatePosEditQuantity(item.product.id, Number(e.target.value))
+                      }
+                      className="h-8 w-16"
+                    />
+                    <span className="text-sm font-semibold">
+                      {formatPrice(item.product.price * item.quantity)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => updatePosEditQuantity(item.product.id, 0)}
+                      aria-label="Remove item"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-border pt-3 flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total</span>
+              <span className="text-sm font-semibold">{formatPrice(posEditSubtotal)}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="bg-transparent" onClick={() => setIsEditingPosOrder(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSavePosEdit} disabled={isSavingPosOrder}>
+              {isSavingPosOrder ? "Guardando..." : "Guardar cambios"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+
 
 
 

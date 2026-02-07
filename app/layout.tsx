@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { CartProvider } from "@/components/cart-provider"
 import { LanguageProvider } from "@/components/language-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" })
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
@@ -43,6 +44,7 @@ export default function RootLayout({
         <LanguageProvider>
           <CartProvider>{children}</CartProvider>
         </LanguageProvider>
+        <Toaster />
         <Analytics />
       </body>
     </html>
