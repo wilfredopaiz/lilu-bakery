@@ -5,7 +5,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("orders")
     .select(
-      "id, order_number, customer_name, phone_number, status, total, created_at, order_items (product_id, product_name, quantity, unit_price, line_total)"
+      "id, order_number, customer_name, phone_number, status, origin, total, created_at, order_items (product_id, product_name, quantity, unit_price, line_total)"
     )
     .order("created_at", { ascending: false })
 

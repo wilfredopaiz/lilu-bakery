@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -703,7 +703,7 @@ export default function DashboardPage() {
             <div className="grid gap-4 lg:grid-cols-2">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Últimas órdenes</CardTitle>
+                  <CardTitle className="text-base">Últimas Órdenes</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {orders.slice(0, 5).map((order) => (
@@ -1025,6 +1025,15 @@ export default function DashboardPage() {
                           <span className="text-sm font-semibold">
                             {formatPrice(item.product.price * item.quantity)}
                           </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => updatePosQuantity(item.product.id, 0)}
+                            aria-label="Remove item"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -1047,98 +1056,54 @@ export default function DashboardPage() {
             </div>
           </TabsContent>
 
-          {/* Orders Tab */}
+                    {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold">{t.orders.title}</h2>
+              <h2 className="text-xl font-semibold">Ventas</h2>
               <p className="text-muted-foreground text-sm">
                 {orders.length} {t.orders.totalCount}
               </p>
             </div>
 
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <Collapsible
-                  key={order.id}
-                  open={expandedOrders.includes(order.id)}
-                  onOpenChange={() => toggleOrderExpanded(order.id)}
-                >
-                  <Card>
-                    <CollapsibleTrigger asChild>
-                      <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                            <div>
-                              <CardTitle className="text-base">{order.customerName}</CardTitle>
-                              <CardDescription>{order.phoneNumber}</CardDescription>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <Badge
-                              variant="secondary"
-                              className={
-                                order.status === "paid"
-                                  ? "bg-green-500 hover:bg-green-600 text-white"
-                                  : order.status === "pending"
-                                    ? "bg-amber-500 hover:bg-amber-600 text-white"
-                                    : order.status === "abandoned"
-                                      ? "bg-slate-400 hover:bg-slate-500 text-white"
-                                      : "bg-red-500 hover:bg-red-600 text-white"
-                              }
-                            >
-                              {order.status === "paid"
-                                ? t.orders.paid
-                                : order.status === "pending"
-                                  ? t.orders.pending
-                                  : order.status === "abandoned"
-                                    ? t.orders.abandoned
-                                    : t.orders.cancelled}
-                            </Badge>
-                            <Badge variant="outline">
-                              {order.origin === "pos" ? "POS" : "Ecommerce"}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              {getTotalProducts(order)} {t.orders.products}
-                            </span>
-                            <span className="font-bold text-primary">{formatPrice(order.total)}</span>
-                            {expandedOrders.includes(order.id) ? (
-                              <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                            )}
-                          </div>
-                        </div>
-                      </CardHeader>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <CardContent className="pt-0">
-                        <div className="border-t pt-4 space-y-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <h4 className="font-medium">{t.orders.orderDetail}</h4>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="bg-transparent"
-                                asChild
-                              >
-                                <Link
-                                  href={`https://wa.me/${order.phoneNumber.replace(/\\D/g, "")}?text=${encodeURIComponent(
-                                    `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
-                                  )}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  <MessageCircle className="h-4 w-4 mr-2" />
-                                  WhatsApp
-                                </Link>
-                              </Button>
-                              <span className="text-sm text-muted-foreground">
-                                {t.orders.changeStatus}:
-                              </span>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm" className="bg-transparent">
+            <Tabs defaultValue="web" className="space-y-4">
+              <TabsList className="flex w-fit">
+                <TabsTrigger value="web">Pedidos Web</TabsTrigger>
+                <TabsTrigger value="pos">Ventas POS</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="web" className="space-y-4">
+                <div className="space-y-4">
+                  {orders
+                    .filter((order) => order.origin !== "pos")
+                    .map((order) => (
+                      <Collapsible
+                        key={order.id}
+                        open={expandedOrders.includes(order.id)}
+                        onOpenChange={() => toggleOrderExpanded(order.id)}
+                      >
+                        <Card>
+                          <CollapsibleTrigger asChild>
+                            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                  <div>
+                                    <CardTitle className="text-base">{order.customerName}</CardTitle>
+                                    <CardDescription>{order.phoneNumber}</CardDescription>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <Badge
+                                    variant="secondary"
+                                    className={
+                                      order.status === "paid"
+                                        ? "bg-green-500 hover:bg-green-600 text-white"
+                                        : order.status === "pending"
+                                          ? "bg-amber-500 hover:bg-amber-600 text-white"
+                                          : order.status === "abandoned"
+                                            ? "bg-slate-400 hover:bg-slate-500 text-white"
+                                            : "bg-red-500 hover:bg-red-600 text-white"
+                                    }
+                                  >
                                     {order.status === "paid"
                                       ? t.orders.paid
                                       : order.status === "pending"
@@ -1146,111 +1111,343 @@ export default function DashboardPage() {
                                         : order.status === "abandoned"
                                           ? t.orders.abandoned
                                           : t.orders.cancelled}
-                                    <ChevronDown className="h-4 w-4 ml-2" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleChangeOrderStatus(order.id, "paid")
-                                    }}
+                                  </Badge>
+                                  <Badge variant="outline">Ecommerce</Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    {getTotalProducts(order)} {t.orders.products}
+                                  </span>
+                                  <span className="font-bold text-primary">{formatPrice(order.total)}</span>
+                                  {expandedOrders.includes(order.id) ? (
+                                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </div>
+                              </div>
+                            </CardHeader>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <CardContent className="pt-0">
+                              <div className="border-t pt-4 space-y-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                  <h4 className="font-medium">{t.orders.orderDetail}</h4>
+                                  <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" className="bg-transparent" asChild>
+                                      <Link
+                                        href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                          `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
+                                        )}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        <MessageCircle className="h-4 w-4 mr-2" />
+                                        WhatsApp
+                                      </Link>
+                                    </Button>
+                                    <span className="text-sm text-muted-foreground">
+                                      {t.orders.changeStatus}:
+                                    </span>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="bg-transparent">
+                                          {order.status === "paid"
+                                            ? t.orders.paid
+                                            : order.status === "pending"
+                                              ? t.orders.pending
+                                              : order.status === "abandoned"
+                                                ? t.orders.abandoned
+                                                : t.orders.cancelled}
+                                          <ChevronDown className="h-4 w-4 ml-2" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleChangeOrderStatus(order.id, "paid")
+                                          }}
+                                        >
+                                          {t.orders.markAsPaid}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleChangeOrderStatus(order.id, "pending")
+                                          }}
+                                        >
+                                          {t.orders.markAsPending}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleChangeOrderStatus(order.id, "abandoned")
+                                          }}
+                                        >
+                                          {t.orders.abandoned}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleChangeOrderStatus(order.id, "cancelled")
+                                          }}
+                                        >
+                                          {t.orders.cancelled}
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>{t.orders.product}</TableHead>
+                                        <TableHead className="text-center">{t.orders.quantity}</TableHead>
+                                        <TableHead className="text-right">{t.orders.unitPrice}</TableHead>
+                                        <TableHead className="text-right">{t.orders.subtotal}</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {order.items.map((item, index) => (
+                                        <TableRow key={index}>
+                                          <TableCell className="font-medium">{item.productName}</TableCell>
+                                          <TableCell className="text-center">{item.quantity}</TableCell>
+                                          <TableCell className="text-right">{formatPrice(item.price)}</TableCell>
+                                          <TableCell className="text-right">
+                                            {formatPrice(item.price * item.quantity)}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                      <TableRow>
+                                        <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
+                                          Subtotal
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium text-muted-foreground">
+                                          {formatPrice(
+                                            order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                                          )}
+                                        </TableCell>
+                                      </TableRow>
+                                      <TableRow>
+                                        <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
+                                          Envio
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium text-muted-foreground">
+                                          {formatPrice(120)}
+                                        </TableCell>
+                                      </TableRow>
+                                      <TableRow>
+                                        <TableCell colSpan={3} className="text-right font-bold">
+                                          {t.orders.total}
+                                        </TableCell>
+                                        <TableCell className="text-right font-bold text-primary">
+                                          {formatPrice(order.total)}
+                                        </TableCell>
+                                      </TableRow>
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </CollapsibleContent>
+                        </Card>
+                      </Collapsible>
+                    ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="pos" className="space-y-4">
+                <div className="space-y-4">
+                  {orders
+                    .filter((order) => order.origin === "pos")
+                    .map((order) => (
+                      <Collapsible
+                        key={order.id}
+                        open={expandedOrders.includes(order.id)}
+                        onOpenChange={() => toggleOrderExpanded(order.id)}
+                      >
+                        <Card>
+                          <CollapsibleTrigger asChild>
+                            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                  <div>
+                                    <CardTitle className="text-base">{order.customerName}</CardTitle>
+                                    <CardDescription>{order.phoneNumber}</CardDescription>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <Badge
+                                    variant="secondary"
+                                    className={
+                                      order.status === "paid"
+                                        ? "bg-green-500 hover:bg-green-600 text-white"
+                                        : order.status === "pending"
+                                          ? "bg-amber-500 hover:bg-amber-600 text-white"
+                                          : order.status === "abandoned"
+                                            ? "bg-slate-400 hover:bg-slate-500 text-white"
+                                            : "bg-red-500 hover:bg-red-600 text-white"
+                                    }
                                   >
-                                    {t.orders.markAsPaid}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleChangeOrderStatus(order.id, "pending")
-                                    }}
-                                  >
-                                    {t.orders.markAsPending}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleChangeOrderStatus(order.id, "abandoned")
-                                    }}
-                                  >
-                                    {t.orders.abandoned}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleChangeOrderStatus(order.id, "cancelled")
-                                    }}
-                                  >
-                                    {t.orders.cancelled}
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </div>
-                          <div className="overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>{t.orders.product}</TableHead>
-                                  <TableHead className="text-center">{t.orders.quantity}</TableHead>
-                                  <TableHead className="text-right">{t.orders.unitPrice}</TableHead>
-                                  <TableHead className="text-right">{t.orders.subtotal}</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {order.items.map((item, index) => (
-                                  <TableRow key={index}>
-                                    <TableCell className="font-medium">{item.productName}</TableCell>
-                                    <TableCell className="text-center">{item.quantity}</TableCell>
-                                    <TableCell className="text-right">
-                                      {formatPrice(item.price)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      {formatPrice(item.price * item.quantity)}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                                <TableRow>
-                                  <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
-                                    Subtotal
-                                  </TableCell>
-                                  <TableCell className="text-right font-medium text-muted-foreground">
-                                    {formatPrice(
-                                      order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
-                                    Envío
-                                  </TableCell>
-                                  <TableCell className="text-right font-medium text-muted-foreground">
-                                    {formatPrice(120)}
-                                  </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell
-                                    colSpan={3}
-                                    className="text-right font-bold"
-                                  >
-                                    {t.orders.total}
-                                  </TableCell>
-                                  <TableCell className="text-right font-bold text-primary">
-                                    {formatPrice(order.total)}
-                                  </TableCell>
-                                </TableRow>
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-              ))}
-            </div>
+                                    {order.status === "paid"
+                                      ? t.orders.paid
+                                      : order.status === "pending"
+                                        ? t.orders.pending
+                                        : order.status === "abandoned"
+                                          ? t.orders.abandoned
+                                          : t.orders.cancelled}
+                                  </Badge>
+                                  <Badge variant="outline">POS</Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    {getTotalProducts(order)} {t.orders.products}
+                                  </span>
+                                  <span className="font-bold text-primary">{formatPrice(order.total)}</span>
+                                  {expandedOrders.includes(order.id) ? (
+                                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </div>
+                              </div>
+                            </CardHeader>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <CardContent className="pt-0">
+                              <div className="border-t pt-4 space-y-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                  <h4 className="font-medium">{t.orders.orderDetail}</h4>
+                                  <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" className="bg-transparent" asChild>
+                                      <Link
+                                        href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                          `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
+                                        )}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        <MessageCircle className="h-4 w-4 mr-2" />
+                                        WhatsApp
+                                      </Link>
+                                    </Button>
+                                    <span className="text-sm text-muted-foreground">
+                                      {t.orders.changeStatus}:
+                                    </span>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="bg-transparent">
+                                          {order.status === "paid"
+                                            ? t.orders.paid
+                                            : order.status === "pending"
+                                              ? t.orders.pending
+                                              : order.status === "abandoned"
+                                                ? t.orders.abandoned
+                                                : t.orders.cancelled}
+                                          <ChevronDown className="h-4 w-4 ml-2" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleChangeOrderStatus(order.id, "paid")
+                                          }}
+                                        >
+                                          {t.orders.markAsPaid}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleChangeOrderStatus(order.id, "pending")
+                                          }}
+                                        >
+                                          {t.orders.markAsPending}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleChangeOrderStatus(order.id, "abandoned")
+                                          }}
+                                        >
+                                          {t.orders.abandoned}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleChangeOrderStatus(order.id, "cancelled")
+                                          }}
+                                        >
+                                          {t.orders.cancelled}
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>{t.orders.product}</TableHead>
+                                        <TableHead className="text-center">{t.orders.quantity}</TableHead>
+                                        <TableHead className="text-right">{t.orders.unitPrice}</TableHead>
+                                        <TableHead className="text-right">{t.orders.subtotal}</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {order.items.map((item, index) => (
+                                        <TableRow key={index}>
+                                          <TableCell className="font-medium">{item.productName}</TableCell>
+                                          <TableCell className="text-center">{item.quantity}</TableCell>
+                                          <TableCell className="text-right">{formatPrice(item.price)}</TableCell>
+                                          <TableCell className="text-right">
+                                            {formatPrice(item.price * item.quantity)}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                      <TableRow>
+                                        <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
+                                          Subtotal
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium text-muted-foreground">
+                                          {formatPrice(
+                                            order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                                          )}
+                                        </TableCell>
+                                      </TableRow>
+                                      <TableRow>
+                                        <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">
+                                          Envio
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium text-muted-foreground">
+                                          {formatPrice(120)}
+                                        </TableCell>
+                                      </TableRow>
+                                      <TableRow>
+                                        <TableCell colSpan={3} className="text-right font-bold">
+                                          {t.orders.total}
+                                        </TableCell>
+                                        <TableCell className="text-right font-bold text-primary">
+                                          {formatPrice(order.total)}
+                                        </TableCell>
+                                      </TableRow>
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </CollapsibleContent>
+                        </Card>
+                      </Collapsible>
+                    ))}
+                </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </main>
     </div>
   )
 }
+
+
+
+
