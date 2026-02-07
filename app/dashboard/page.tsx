@@ -1,12 +1,34 @@
 ﻿"use client"
 
 import { useEffect, useState } from "react"
+import {
+  CartesianGrid,
+  LabelList,
+  Legend,
+  Line,
+  LineChart as ReLineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   Dialog,
   DialogContent,
@@ -81,7 +103,8 @@ interface DashboardProductCardProps {
   setEditProductImageFile: (file: File | null) => void
   isSavingProduct: boolean
   handleEditProduct: () => void
-  handleDeleteProduct: (id: string) => void
+  requestReactivateProduct: (product: Product) => void
+  handleHideProduct: (product: Product) => void
 }
 
 function DashboardProductCard({
@@ -94,10 +117,18 @@ function DashboardProductCard({
   setEditProductImageFile,
   isSavingProduct,
   handleEditProduct,
-  handleDeleteProduct,
+  requestReactivateProduct,
+  handleHideProduct,
 }: DashboardProductCardProps) {
+  const isHidden = !product.channels || product.channels.length === 0
+
   return (
-    <Card className="border-border/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <Card
+      className={cn(
+        "border-border/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+        isHidden && "bg-muted/50 text-muted-foreground opacity-70"
+      )}
+    >
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative w-full sm:w-28 h-36 sm:h-24 rounded-xl overflow-hidden bg-muted shrink-0">
@@ -119,10 +150,15 @@ function DashboardProductCard({
                   Featured
                 </Badge>
               )}
-              {(product.channels ?? ["ecommerce", "pos"]).includes("ecommerce") && (
+              {isHidden && (
+                <Badge variant="outline" className="border-muted-foreground/40 text-muted-foreground">
+                  Oculto
+                </Badge>
+              )}
+              {(product.channels ?? []).includes("ecommerce") && (
                 <Badge variant="outline">Ecommerce</Badge>
               )}
-              {(product.channels ?? ["ecommerce", "pos"]).includes("pos") && (
+              {(product.channels ?? []).includes("pos") && (
                 <Badge variant="outline">POS</Badge>
               )}
             </div>
@@ -281,15 +317,25 @@ function DashboardProductCard({
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 sm:flex-none text-destructive hover:text-destructive bg-transparent"
-              onClick={() => handleDeleteProduct(product.id)}
-            >
-              <Trash2 className="h-4 w-4 sm:mr-0 mr-2" />
-              <span className="sm:hidden">{t.products.delete}</span>
-            </Button>
+            {isHidden ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 sm:flex-none bg-transparent"
+                onClick={() => requestReactivateProduct(product)}
+              >
+                Reactivar
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 sm:flex-none text-muted-foreground bg-transparent"
+                onClick={() => handleHideProduct(product)}
+              >
+                Ocultar
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>
@@ -333,6 +379,10 @@ export default function DashboardPage() {
   const [posEditItems, setPosEditItems] = useState<Array<{ product: Product; quantity: number }>>([])
   const [posEditCustomerName, setPosEditCustomerName] = useState("")
   const [posEditPhoneNumber, setPosEditPhoneNumber] = useState("")
+  const [isCancelPosDialogOpen, setIsCancelPosDialogOpen] = useState(false)
+  const [cancelPosOrderId, setCancelPosOrderId] = useState<string | null>(null)
+  const [isReactivateDialogOpen, setIsReactivateDialogOpen] = useState(false)
+  const [reactivateProductId, setReactivateProductId] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -426,6 +476,126 @@ export default function DashboardPage() {
   const cookieProducts = productList.filter((p) => p.category === "cookies")
   const brownieProducts = productList.filter((p) => p.category === "brownies")
 
+  const now = new Date()
+  const ecommerceOrders = orders.filter((order) => order.origin !== "pos")
+  const posOrders = orders.filter((order) => order.origin === "pos")
+  const paidOrders = orders.filter((order) => order.status === "paid")
+  const paidEcommerceOrders = paidOrders.filter((order) => order.origin !== "pos")
+  const paidPosOrders = paidOrders.filter((order) => order.origin === "pos")
+
+  const filterSameDay = (order: Order) => {
+    const created = new Date(order.createdAt)
+    return (
+      created.getFullYear() === now.getFullYear() &&
+      created.getMonth() === now.getMonth() &&
+      created.getDate() === now.getDate()
+    )
+  }
+
+  const filterSameMonth = (order: Order) => {
+    const created = new Date(order.createdAt)
+    return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth()
+  }
+
+  const dayEcommerceOrders = paidEcommerceOrders.filter(filterSameDay)
+  const dayPosOrders = paidPosOrders.filter(filterSameDay)
+  const monthEcommerceOrders = paidEcommerceOrders.filter(filterSameMonth)
+  const monthPosOrders = paidPosOrders.filter(filterSameMonth)
+
+  const dayEcommerceTotal = dayEcommerceOrders.reduce((sum, order) => sum + order.total, 0)
+  const dayPosTotal = dayPosOrders.reduce((sum, order) => sum + order.total, 0)
+  const dayTotal = dayEcommerceTotal + dayPosTotal
+  const monthEcommerceTotal = monthEcommerceOrders.reduce((sum, order) => sum + order.total, 0)
+  const monthPosTotal = monthPosOrders.reduce((sum, order) => sum + order.total, 0)
+  const monthTotal = monthEcommerceTotal + monthPosTotal
+
+  const weekStart = new Date(now)
+  const dayOfWeek = weekStart.getDay()
+  const diffToMonday = (dayOfWeek + 6) % 7
+  weekStart.setDate(weekStart.getDate() - diffToMonday)
+  weekStart.setHours(0, 0, 0, 0)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+  weekEnd.setHours(23, 59, 59, 999)
+
+  const filterCurrentWeek = (order: Order) => {
+    const created = new Date(order.createdAt)
+    return created >= weekStart && created <= weekEnd
+  }
+
+  const weekEcommerceOrders = paidEcommerceOrders.filter(filterCurrentWeek)
+  const weekPosOrders = paidPosOrders.filter(filterCurrentWeek)
+  const weekEcommerceTotal = weekEcommerceOrders.reduce((sum, order) => sum + order.total, 0)
+  const weekPosTotal = weekPosOrders.reduce((sum, order) => sum + order.total, 0)
+  const weekTotal = weekEcommerceTotal + weekPosTotal
+
+  const monthLabels = Array.from({ length: 2 }, (_value, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (1 - index), 1)
+    return {
+      label: date.toLocaleString("es", { month: "short" }),
+      year: date.getFullYear(),
+      month: date.getMonth(),
+    }
+  })
+
+  const salesByMonth = monthLabels.map((monthInfo) => {
+    const inMonth = (order: Order) => {
+      const created = new Date(order.createdAt)
+      return created.getFullYear() === monthInfo.year && created.getMonth() === monthInfo.month
+    }
+    const ecommerceTotal = paidEcommerceOrders.filter(inMonth).reduce((sum, order) => sum + order.total, 0)
+    const posTotal = paidPosOrders.filter(inMonth).reduce((sum, order) => sum + order.total, 0)
+    return {
+      label: monthInfo.label,
+      ecommerce: ecommerceTotal,
+      pos: posTotal,
+      total: ecommerceTotal + posTotal,
+    }
+  })
+
+  const categoryByProduct = new Map(productList.map((product) => [product.id, product.category]))
+  const categoryByMonth = monthLabels.map((monthInfo) => {
+    const inMonth = (order: Order) => {
+      const created = new Date(order.createdAt)
+      return created.getFullYear() === monthInfo.year && created.getMonth() === monthInfo.month
+    }
+    const totals = paidOrders
+      .filter(inMonth)
+      .reduce(
+        (acc, order) => {
+          order.items.forEach((item) => {
+            const category = categoryByProduct.get(item.productId)
+            const lineTotal = item.price * item.quantity
+            if (category === "cookies") acc.cookies += lineTotal
+            if (category === "brownies") acc.brownies += lineTotal
+          })
+          return acc
+        },
+        { cookies: 0, brownies: 0 }
+      )
+    return {
+      label: monthInfo.label,
+      cookies: totals.cookies,
+      brownies: totals.brownies,
+    }
+  })
+
+  const chartData = salesByMonth.map((entry, index) => ({
+    month: entry.label,
+    ecommerce: entry.ecommerce,
+    pos: entry.pos,
+    total: entry.total,
+    cookies: categoryByMonth[index]?.cookies ?? 0,
+    brownies: categoryByMonth[index]?.brownies ?? 0,
+  }))
+
+  const monthPendingOrders = orders.filter((order) => order.status === "pending" && filterSameMonth(order))
+  const monthCancelledOrders = orders.filter(
+    (order) => (order.status === "cancelled" || order.status === "abandoned") && filterSameMonth(order)
+  )
+  const monthPendingTotal = monthPendingOrders.reduce((sum, order) => sum + order.total, 0)
+  const monthCancelledTotal = monthCancelledOrders.reduce((sum, order) => sum + order.total, 0)
+
   const toggleOrderExpanded = (orderId: string) => {
     setExpandedOrders((prev) =>
       prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]
@@ -451,14 +621,6 @@ export default function DashboardPage() {
       toast({
         title: "Faltan datos",
         description: "Nombre, descripción, precio e imagen son obligatorios.",
-        variant: "destructive",
-      })
-      return
-    }
-    if (newProduct.channels.length === 0) {
-      toast({
-        title: "Selecciona canales",
-        description: "Elige al menos un canal de venta (Ecommerce o POS).",
         variant: "destructive",
       })
       return
@@ -510,14 +672,6 @@ export default function DashboardPage() {
       })
       return
     }
-    if (!editingProduct.channels || editingProduct.channels.length === 0) {
-      toast({
-        title: "Selecciona canales",
-        description: "Elige al menos un canal de venta (Ecommerce o POS).",
-        variant: "destructive",
-      })
-      return
-    }
     setIsSavingProduct(true)
     try {
       let imageUrl = editingProduct.image
@@ -556,27 +710,61 @@ export default function DashboardPage() {
     }
   }
 
-  const handleDeleteProduct = async (id: string) => {
-    const confirmed = window.confirm("Are you sure you want to delete this product?")
-    if (!confirmed) return
+  const handleHideProduct = async (product: Product) => {
     const response = await fetch("/api/admin/products", {
-      method: "DELETE",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ id: product.id, channels: [] }),
     })
     if (!response.ok) return
-    setProductList(productList.filter((p) => p.id !== id))
+    setProductList(
+      productList.map((item) =>
+        item.id === product.id ? { ...item, channels: [] } : item
+      )
+    )
+  }
+
+  const handleReactivateProduct = async (id: string) => {
+    const response = await fetch("/api/admin/products", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, channels: ["ecommerce", "pos"] }),
+    })
+    if (!response.ok) return
+    setProductList(
+      productList.map((item) =>
+        item.id === id ? { ...item, channels: ["ecommerce", "pos"] } : item
+      )
+    )
+  }
+
+  const requestReactivateProduct = (product: Product) => {
+    setReactivateProductId(product.id)
+    setIsReactivateDialogOpen(true)
   }
 
   const handleChangeOrderStatus = async (
     orderId: string,
     newStatus: "paid" | "pending" | "abandoned" | "cancelled"
   ) => {
+    const response = await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: orderId, status: newStatus }),
+    })
+
+    if (!response.ok) {
+      toast({
+        title: "Error al actualizar",
+        description: "No se pudo cambiar el estado de la venta.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setOrders(
       orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
     )
-
-    await supabaseBrowser.from("orders").update({ status: newStatus }).eq("id", orderId)
   }
 
   const getTotalProducts = (order: Order) => {
@@ -653,6 +841,7 @@ export default function DashboardPage() {
       toast({
         title: "Venta registrada",
         description: "La venta POS se guardó correctamente.",
+        variant: "success",
       })
     } finally {
       setIsSavingPosOrder(false)
@@ -721,6 +910,7 @@ export default function DashboardPage() {
       toast({
         title: "Venta actualizada",
         description: "Los cambios se guardaron correctamente.",
+        variant: "success",
       })
     } finally {
       setIsSavingPosOrder(false)
@@ -745,6 +935,28 @@ export default function DashboardPage() {
     toast({
       title: "Venta cancelada",
       description: "La venta se marcó como cancelada.",
+    })
+  }
+
+  const handleReactivatePosOrder = async (orderId: string) => {
+    const response = await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: orderId, status: "paid" }),
+    })
+    if (!response.ok) {
+      toast({
+        title: "Error al reactivar",
+        description: "No se pudo reactivar la venta.",
+        variant: "destructive",
+      })
+      return
+    }
+    await loadOrders()
+    toast({
+      title: "Venta reactivada",
+      description: "La venta volvió a estado pagado.",
+      variant: "success",
     })
   }
 
@@ -829,139 +1041,268 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-xl font-semibold">{t.dashboard.title}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Resumen de ventas y productos
+                  Resumen de ventas por canal
                 </p>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Card>
-                <CardContent className="p-5 space-y-1">
-                  <p className="text-sm text-muted-foreground">Ventas pagadas</p>
-                  <p className="text-2xl font-semibold">
-                    {formatPrice(
-                      orders
-                        .filter((order) => order.status === "paid")
-                        .reduce((sum, order) => sum + order.total, 0)
-                    )}
-                  </p>
+                <CardContent className="p-5 space-y-2">
+                  <p className="text-sm font-semibold">Ventas del día</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Ecommerce</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(dayEcommerceTotal)} ({dayEcommerceOrders.length} ventas)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">POS</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(dayPosTotal)} ({dayPosOrders.length} ventas)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border/60 pt-2">
+                    <span className="text-xs text-muted-foreground">Total</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(dayTotal)} ({dayEcommerceOrders.length + dayPosOrders.length} ventas)
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5 space-y-1">
-                  <p className="text-sm text-muted-foreground">Ventas pendientes</p>
-                  <p className="text-2xl font-semibold">
-                    {formatPrice(
-                      orders
-                        .filter((order) => order.status === "pending")
-                        .reduce((sum, order) => sum + order.total, 0)
-                    )}
-                  </p>
+                <CardContent className="p-5 space-y-2">
+                  <p className="text-sm font-semibold">Ventas de la semana</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Ecommerce</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(weekEcommerceTotal)} ({weekEcommerceOrders.length} ventas)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">POS</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(weekPosTotal)} ({weekPosOrders.length} ventas)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border/60 pt-2">
+                    <span className="text-xs text-muted-foreground">Total</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(weekTotal)} ({weekEcommerceOrders.length + weekPosOrders.length} ventas)
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5 space-y-1">
-                  <p className="text-sm text-muted-foreground">Órdenes</p>
-                  <p className="text-2xl font-semibold">{orders.length}</p>
+                <CardContent className="p-5 space-y-2">
+                  <p className="text-sm font-semibold">Ventas del mes</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Ecommerce</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(monthEcommerceTotal)} ({monthEcommerceOrders.length} ventas)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">POS</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(monthPosTotal)} ({monthPosOrders.length} ventas)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border/60 pt-2">
+                    <span className="text-xs text-muted-foreground">Total</span>
+                    <span className="text-sm font-semibold">
+                      {formatPrice(monthTotal)} ({monthEcommerceOrders.length + monthPosOrders.length} ventas)
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Ventas por mes (L)</CardTitle>
+                  <CardDescription>3 líneas: Ecommerce, POS y Total</CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-visible">
+                  <div className="h-64 w-full px-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ReLineChart data={chartData} margin={{ top: 28, right: 32, left: 12, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} padding={{ left: 16, right: 16 }} />
+                        <YAxis hide />
+                        <Tooltip formatter={(value) => formatPrice(Number(value))} />
+                        <Line
+                          type="monotone"
+                          dataKey="total"
+                          name="Total"
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 4 }}
+                        >
+                          <LabelList dataKey="total" position="top" offset={10} formatter={(value) => formatPrice(Number(value))} />
+                        </Line>
+                        <Line
+                          type="monotone"
+                          dataKey="ecommerce"
+                          name="Ecommerce"
+                          stroke="#2563eb"
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 4 }}
+                        >
+                          <LabelList dataKey="ecommerce" position="top" offset={10} formatter={(value) => formatPrice(Number(value))} />
+                        </Line>
+                        <Line
+                          type="monotone"
+                          dataKey="pos"
+                          name="POS"
+                          stroke="#10b981"
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 4 }}
+                        >
+                          <LabelList dataKey="pos" position="top" offset={10} formatter={(value) => formatPrice(Number(value))} />
+                        </Line>
+                      </ReLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#f59e0b" }} />
+                      Total
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: "#2563eb" }}
+                      />
+                      Ecommerce
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#10b981" }} />
+                      POS
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5 space-y-1">
-                  <p className="text-sm text-muted-foreground">Productos</p>
-                  <p className="text-2xl font-semibold">{productList.length}</p>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Ventas por mes (Galletas vs Brownies)</CardTitle>
+                  <CardDescription>Total Ecommerce + POS</CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-visible">
+                  <div className="h-64 w-full px-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ReLineChart data={chartData} margin={{ top: 28, right: 32, left: 12, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} padding={{ left: 16, right: 16 }} />
+                        <YAxis hide />
+                        <Tooltip formatter={(value) => formatPrice(Number(value))} />
+                        <Line
+                          type="monotone"
+                          dataKey="cookies"
+                          name="Galletas"
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 4 }}
+                        >
+                          <LabelList dataKey="cookies" position="top" offset={10} formatter={(value) => formatPrice(Number(value))} />
+                        </Line>
+                        <Line
+                          type="monotone"
+                          dataKey="brownies"
+                          name="Brownies"
+                          stroke="#6366f1"
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 4 }}
+                        >
+                          <LabelList dataKey="brownies" position="top" offset={10} formatter={(value) => formatPrice(Number(value))} />
+                        </Line>
+                      </ReLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#f59e0b" }} />
+                      Galletas
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#6366f1" }} />
+                      Brownies
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Ventas pendientes de cobro (mes)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Cantidad</span>
+                    <span className="text-sm font-semibold">{monthPendingOrders.length} ventas</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Total</span>
+                    <span className="text-sm font-semibold">{formatPrice(monthPendingTotal)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Ventas canceladas/abandonadas (mes)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Cantidad</span>
+                    <span className="text-sm font-semibold">{monthCancelledOrders.length} ventas</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Total</span>
+                    <span className="text-sm font-semibold">{formatPrice(monthCancelledTotal)}</span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Órdenes por estado</CardTitle>
+                <CardTitle className="text-base">Órdenes por estado (solo Ecommerce)</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
                   <span className="text-sm text-muted-foreground">{t.orders.paid}</span>
                   <span className="text-sm font-semibold">
-                    {orders.filter((order) => order.status === "paid").length}
+                    {orders.filter((order) => order.origin !== "pos" && order.status === "paid").length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
                   <span className="text-sm text-muted-foreground">{t.orders.pending}</span>
                   <span className="text-sm font-semibold">
-                    {orders.filter((order) => order.status === "pending").length}
+                    {orders.filter((order) => order.origin !== "pos" && order.status === "pending").length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
                   <span className="text-sm text-muted-foreground">{t.orders.abandoned}</span>
                   <span className="text-sm font-semibold">
-                    {orders.filter((order) => order.status === "abandoned").length}
+                    {orders.filter((order) => order.origin !== "pos" && order.status === "abandoned").length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
                   <span className="text-sm text-muted-foreground">{t.orders.cancelled}</span>
                   <span className="text-sm font-semibold">
-                    {orders.filter((order) => order.status === "cancelled").length}
+                    {orders.filter((order) => order.origin !== "pos" && order.status === "cancelled").length}
                   </span>
                 </div>
               </CardContent>
             </Card>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Últimas Órdenes</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {orders.slice(0, 5).map((order) => (
-                    <div key={order.id} className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium">{order.customerName}</p>
-                        <p className="text-xs text-muted-foreground">{order.phoneNumber}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-primary">
-                          {formatPrice(order.total)}
-                        </span>
-                        {order.phoneNumber !== "0" && (
-                          <Button variant="outline" size="sm" className="bg-transparent" asChild>
-                            <Link
-                              href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                `Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`
-                              )}`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <MessageCircle className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {orders.length === 0 && (
-                    <p className="text-sm text-muted-foreground">Sin órdenes aún.</p>
-                  )}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Productos destacados</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {productList
-                    .filter((product) => product.featured)
-                    .slice(0, 5)
-                    .map((product) => (
-                      <div key={product.id} className="flex items-center justify-between">
-                        <p className="text-sm font-medium">{product.name}</p>
-                        <span className="text-sm text-muted-foreground">{formatPrice(product.price)}</span>
-                      </div>
-                    ))}
-                  {productList.filter((product) => product.featured).length === 0 && (
-                    <p className="text-sm text-muted-foreground">Sin productos destacados.</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
 
           {/* Products Tab */}
@@ -1128,7 +1469,8 @@ export default function DashboardPage() {
                       setEditProductImageFile={setEditProductImageFile}
                       isSavingProduct={isSavingProduct}
                       handleEditProduct={handleEditProduct}
-                      handleDeleteProduct={handleDeleteProduct}
+                      requestReactivateProduct={requestReactivateProduct}
+                      handleHideProduct={handleHideProduct}
                     />
                   ))}
                   {cookieProducts.length === 0 && (
@@ -1156,7 +1498,8 @@ export default function DashboardPage() {
                       setEditProductImageFile={setEditProductImageFile}
                       isSavingProduct={isSavingProduct}
                       handleEditProduct={handleEditProduct}
-                      handleDeleteProduct={handleDeleteProduct}
+                      requestReactivateProduct={requestReactivateProduct}
+                      handleHideProduct={handleHideProduct}
                     />
                   ))}
                   {brownieProducts.length === 0 && (
@@ -1564,17 +1907,32 @@ export default function DashboardPage() {
                                   >
                                     Editar
                                   </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="bg-transparent text-destructive hover:text-destructive"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleCancelPosOrder(order.id)
-                                    }}
-                                  >
-                                    Cancelar
-                                  </Button>
+                                  {order.status === "cancelled" ? (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="bg-transparent"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleReactivatePosOrder(order.id)
+                                      }}
+                                    >
+                                      Reactivar
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="bg-transparent text-destructive hover:text-destructive"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setCancelPosOrderId(order.id)
+                                        setIsCancelPosDialogOpen(true)
+                                      }}
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             </CardHeader>
@@ -1785,6 +2143,57 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isCancelPosDialogOpen} onOpenChange={setIsCancelPosDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar venta POS</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción marcará la venta como cancelada. Puedes reactivarla después si fue un error.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCancelPosOrderId(null)}>
+              Volver
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!cancelPosOrderId) return
+                await handleCancelPosOrder(cancelPosOrderId)
+                setCancelPosOrderId(null)
+              }}
+            >
+              Confirmar cancelación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isReactivateDialogOpen} onOpenChange={setIsReactivateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reactivar producto</AlertDialogTitle>
+            <AlertDialogDescription>
+              Reactivar este producto lo hará aparecer en todos los canales (Ecommerce, POS, etc.).
+              Para ajustar los canales, edita el producto manualmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setReactivateProductId(null)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!reactivateProductId) return
+                await handleReactivateProduct(reactivateProductId)
+                setReactivateProductId(null)
+              }}
+            >
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

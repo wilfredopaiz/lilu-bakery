@@ -18,10 +18,13 @@ export async function GET() {
 export async function POST(request: Request) {
   const body = await request.json()
 
-  const { name, description, price, category, image, featured = false } = body ?? {}
+  const { name, description, price, category, image, featured = false, channels } = body ?? {}
 
   if (!name || !description || !price || !category || !image) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 })
+  }
+  if (!Array.isArray(channels)) {
+    return NextResponse.json({ error: "Missing channels" }, { status: 400 })
   }
 
   const { data, error } = await supabaseAdmin
@@ -34,6 +37,7 @@ export async function POST(request: Request) {
       category,
       image,
       featured,
+      channels,
     })
     .select("*")
     .single()
