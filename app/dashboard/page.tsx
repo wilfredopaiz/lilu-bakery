@@ -276,6 +276,12 @@ export default function DashboardPage() {
   const [newProductImageFile, setNewProductImageFile] = useState<File | null>(null)
   const [editProductImageFile, setEditProductImageFile] = useState<File | null>(null)
   const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const [posCustomerName, setPosCustomerName] = useState("")
+  const [posPhoneNumber, setPosPhoneNumber] = useState("")
+  const [posItems, setPosItems] = useState<
+    Array<{ product: Product; quantity: number }>
+  >([])
+  const [isSavingPosOrder, setIsSavingPosOrder] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -344,6 +350,7 @@ export default function DashboardPage() {
           customerName: order.customer_name,
           phoneNumber: order.phone_number,
           status: order.status,
+          origin: order.origin,
           total: order.total,
           createdAt: order.created_at,
           items: (order.order_items || []).map((item: any) => ({
@@ -477,6 +484,65 @@ export default function DashboardPage() {
     return order.items.reduce((sum, item) => sum + item.quantity, 0)
   }
 
+  const addPosItem = (product: Product) => {
+    setPosItems((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id)
+      if (existing) {
+        return prev.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      }
+      return [...prev, { product, quantity: 1 }]
+    })
+  }
+
+  const updatePosQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setPosItems((prev) => prev.filter((item) => item.product.id !== productId))
+      return
+    }
+    setPosItems((prev) =>
+      prev.map((item) =>
+        item.product.id === productId ? { ...item, quantity } : item
+      )
+    )
+  }
+
+  const posSubtotal = posItems.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  )
+
+  const handleCreatePosOrder = async () => {
+    if (posItems.length === 0) return
+    setIsSavingPosOrder(true)
+    try {
+      const response = await fetch("/api/admin/pos-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: posCustomerName,
+          phoneNumber: posPhoneNumber,
+          currency: "HNL",
+          items: posItems.map((item) => ({
+            productId: item.product.id,
+            productName: item.product.name,
+            quantity: item.quantity,
+            price: item.product.price,
+          })),
+        }),
+      })
+      if (!response.ok) return
+      setPosCustomerName("")
+      setPosPhoneNumber("")
+      setPosItems([])
+    } finally {
+      setIsSavingPosOrder(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
@@ -533,7 +599,7 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-serif font-bold mb-8">{t.dashboard.title}</h1>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               {t.dashboard.title}
@@ -541,6 +607,10 @@ export default function DashboardPage() {
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               {t.tabs.products}
+            </TabsTrigger>
+            <TabsTrigger value="pos" className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              POS
             </TabsTrigger>
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
@@ -853,6 +923,130 @@ export default function DashboardPage() {
             </Tabs>
           </TabsContent>
 
+          {/* POS Tab */}
+          <TabsContent value="pos" className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">POS</h2>
+                <p className="text-sm text-muted-foreground">
+                  Registra ventas físicas con los productos existentes.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-base">Productos</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3 sm:grid-cols-2">
+                  {productList.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => addPosItem(product)}
+                      className="flex items-center gap-3 rounded-lg border border-border/60 bg-background p-3 text-left transition hover:border-primary/40 hover:shadow-sm"
+                    >
+                      <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted shrink-0">
+                        <Image
+                          src={product.image || "/placeholder.svg"}
+                          alt={product.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {product.category === "cookies" ? t.products.cookie : t.products.brownie}
+                        </p>
+                        <p className="text-sm font-semibold text-primary">
+                          {formatPrice(product.price)}
+                        </p>
+                      </div>
+                      <Plus className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  ))}
+                  {productList.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No hay productos disponibles.</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Nueva venta</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pos-customer">Cliente</Label>
+                    <Input
+                      id="pos-customer"
+                      value={posCustomerName}
+                      onChange={(e) => setPosCustomerName(e.target.value)}
+                      placeholder="Nombre del cliente"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pos-phone">Teléfono</Label>
+                    <Input
+                      id="pos-phone"
+                      value={posPhoneNumber}
+                      onChange={(e) => setPosPhoneNumber(e.target.value)}
+                      placeholder="Número de teléfono"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                    <span className="text-sm text-muted-foreground">Estado</span>
+                    <span className="text-sm font-semibold">{t.orders.paid}</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Items</p>
+                    {posItems.length === 0 && (
+                      <p className="text-sm text-muted-foreground">Agrega productos a la venta.</p>
+                    )}
+                    {posItems.map((item) => (
+                      <div key={item.product.id} className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{item.product.name}</p>
+                          <p className="text-xs text-muted-foreground">{formatPrice(item.product.price)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updatePosQuantity(item.product.id, Number(e.target.value))
+                            }
+                            className="h-8 w-16"
+                          />
+                          <span className="text-sm font-semibold">
+                            {formatPrice(item.product.price * item.quantity)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-border pt-3 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Total</span>
+                    <span className="text-sm font-semibold">{formatPrice(posSubtotal)}</span>
+                  </div>
+
+                  <Button
+                    className="w-full"
+                    onClick={handleCreatePosOrder}
+                    disabled={isSavingPosOrder || posItems.length === 0}
+                  >
+                    {isSavingPosOrder ? "Guardando..." : "Registrar venta"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             <div>
@@ -899,6 +1093,9 @@ export default function DashboardPage() {
                                   : order.status === "abandoned"
                                     ? t.orders.abandoned
                                     : t.orders.cancelled}
+                            </Badge>
+                            <Badge variant="outline">
+                              {order.origin === "pos" ? "POS" : "Ecommerce"}
                             </Badge>
                             <span className="text-sm text-muted-foreground">
                               {getTotalProducts(order)} {t.orders.products}

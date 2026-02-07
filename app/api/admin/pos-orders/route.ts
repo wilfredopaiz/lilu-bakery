@@ -10,11 +10,10 @@ const orderItemSchema = z.object({
 })
 
 const orderSchema = z.object({
-  customerName: z.string().min(1),
-  phoneNumber: z.string().min(1),
-  paymentMethod: z.string().min(1),
+  customerName: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  paymentMethod: z.string().min(1).default("pos"),
   currency: z.string().min(1).default("HNL"),
-  shippingFee: z.number().nonnegative().default(120),
   items: z.array(orderItemSchema).min(1),
 })
 
@@ -27,34 +26,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
-    const { customerName, phoneNumber, paymentMethod, currency, shippingFee, items } = parsed.data
-    const orderNumber = `LB-${Date.now().toString(36).toUpperCase()}`
-
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const total = subtotal + shippingFee
-
-    let userId: string | null = null
-    const authHeader = request.headers.get("authorization")
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.slice("Bearer ".length)
-      const { data } = await supabaseAdmin.auth.getUser(token)
-      if (data.user) {
-        userId = data.user.id
-      }
-    }
+    const {
+      customerName,
+      phoneNumber,
+      paymentMethod,
+      currency,
+      items,
+    } = parsed.data
+    const orderNumber = `POS-${Date.now().toString(36).toUpperCase()}`
+    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert({
         order_number: orderNumber,
-        user_id: userId,
-        customer_name: customerName,
-        phone_number: phoneNumber,
-        status: "pending",
+        user_id: null,
+        customer_name: customerName?.trim() || "Cliente POS",
+        phone_number: phoneNumber?.trim() || "0",
+        status: "paid",
         payment_method: paymentMethod,
         total,
         currency,
-        origin: "ecommerce",
+        origin: "pos",
       })
       .select("id, order_number, total")
       .single()
