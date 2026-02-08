@@ -64,21 +64,24 @@ export function QuantitySelector({ product, className, variant = "default" }: Qu
       if (!isInitialMount.current) {
         if (newQuantity > oldQuantity) {
           toast({
-            title: "Added to cart",
-            description: `${product.name} has been added to your cart.`,
+            title: "Agregado al carrito",
+            description: `${product.name} se agregó al carrito.`,
             duration: 2000,
+            className: "border-amber-200 bg-amber-50 text-amber-900",
           })
         } else if (newQuantity < oldQuantity && newQuantity === 0) {
           toast({
-            title: "Removed from cart",
-            description: `${product.name} has been removed from your cart.`,
+            title: "Removido del carrito",
+            description: `${product.name} se eliminó del carrito.`,
             duration: 2000,
+            className: "border-amber-200 bg-amber-50 text-amber-900",
           })
         } else if (newQuantity < oldQuantity) {
           toast({
-            title: "Updated cart",
-            description: `${product.name} quantity updated.`,
+            title: "Carrito actualizado",
+            description: `Cantidad de ${product.name} actualizada.`,
             duration: 2000,
+            className: "border-amber-200 bg-amber-50 text-amber-900",
           })
         }
       }

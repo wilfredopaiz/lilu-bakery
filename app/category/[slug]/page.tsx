@@ -10,7 +10,7 @@ import { supabaseBrowser } from "@/lib/supabase/client"
 import type { Product } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowRightLeft } from "lucide-react"
+import { ArrowRightLeft, Heart } from "lucide-react"
 
 export default function CategoryPage() {
   const params = useParams()
@@ -63,12 +63,20 @@ export default function CategoryPage() {
         <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">{title}</h1>
           <p className="text-muted-foreground text-lg">{description}</p>
-          <Button asChild variant="outline" className="w-fit bg-transparent">
-            <Link href={crossCategoryHref}>
-              <ArrowRightLeft className="h-4 w-4 mr-2" />
-              {crossCategoryLabel}
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="w-fit bg-transparent">
+              <Link href={crossCategoryHref}>
+                <ArrowRightLeft className="h-4 w-4 mr-2" />
+                {crossCategoryLabel}
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-fit bg-transparent">
+              <Link href="/seasonal/valentin">
+                <Heart className="h-4 w-4 mr-2" />
+                {t.nav.sanValentin}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

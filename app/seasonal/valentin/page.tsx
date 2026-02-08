@@ -47,7 +47,7 @@ export default function ValentinPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 scroll-smooth">
         <section className="relative overflow-hidden bg-gradient-to-br from-pink-200/40 via-rose-100/40 to-red-100/50">
           <div className="container mx-auto px-4 py-16 md:py-24">
             <div className="max-w-3xl">
@@ -61,15 +61,15 @@ export default function ValentinPage() {
                 {t.seasonal.valentinDesc}
               </p>
               <Button asChild className="gap-2">
-                <Link href="/category/cookies">
+                <a href="#productos">
                   {t.seasonal.valentinCta} <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
               </Button>
             </div>
           </div>
         </section>
 
-        <section className="container mx-auto px-4 py-12">
+        <section id="productos" className="container mx-auto px-4 py-12 scroll-mt-24">
           {products.length === 0 ? (
             <p className="text-muted-foreground">{t.seasonal.empty}</p>
           ) : (

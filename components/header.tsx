@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useCart } from "@/components/cart-provider"
 import { useLanguage } from "@/components/language-provider"
 import { useState } from "react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,6 +103,9 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
+                <SheetHeader>
+                  <SheetTitle className="sr-only">Menú</SheetTitle>
+                </SheetHeader>
                 <nav className="flex flex-col space-y-2 mt-8">
                   {navigation.map((item) => (
                     <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
