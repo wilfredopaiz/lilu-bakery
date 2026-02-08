@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Instagram, Facebook, Mail } from "lucide-react"
+import { Instagram } from "lucide-react"
 import { useLanguage } from "@/components/language-provider"
 
 export function Footer() {
@@ -44,14 +44,13 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">{t.footer.connect}</h4>
             <div className="flex space-x-4">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="https://www.instagram.com/lilus_bakery.hn?igsh=MTc0eDU3bDVycTZ4Yg=="
+                className="text-muted-foreground hover:text-primary transition-colors"
+                target="_blank"
+                rel="noreferrer"
+              >
                 <Instagram className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Mail className="h-5 w-5" />
               </a>
             </div>
           </div>

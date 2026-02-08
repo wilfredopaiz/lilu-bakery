@@ -27,7 +27,6 @@ export default function HomePage() {
         .from("products")
         .select("*")
         .eq("featured", true)
-        .eq("is_seasonal", false)
         .contains("channels", ["ecommerce"])
         .order("name", { ascending: true })
 
@@ -76,7 +75,7 @@ export default function HomePage() {
         </section>
 
         {/* Seasonal Banner */}
-        <section className="container mx-auto px-4 py-12">
+        <section className="container mx-auto px-4 pt-12">
           <div className="rounded-3xl border border-rose-200/60 bg-gradient-to-br from-rose-50 via-pink-50 to-red-50 p-8 md:p-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-rose-600 mb-2">
