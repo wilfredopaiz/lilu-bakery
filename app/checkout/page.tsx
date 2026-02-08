@@ -242,6 +242,9 @@ export default function CheckoutPage() {
                       onChange={(e) => setNotes(e.target.value)}
                       rows={4}
                     />
+                    <p className="text-xs text-muted-foreground whitespace-pre-line">
+                      {t.checkout.shippingNotesHelper}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -387,9 +390,6 @@ export default function CheckoutPage() {
                 <p className="whitespace-pre-wrap">{notes}</p>
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              Hora aproximada de entrega: 10:00am a 12:00pm
-            </p>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>{t.cart.subtotal}</span>
