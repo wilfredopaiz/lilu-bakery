@@ -4,16 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { Trash2 } from "lucide-react"
 import { formatPrice } from "@/lib/format-price"
 import type { PosItem } from "@/hooks/dashboard/types"
 import { useDashboardUi } from "@/components/dashboard/dashboard-ui-context"
 
 export function PosCart(props: {
+  saleOrigin: "pos" | "manual" | "manual-full"
   customerName: string
   setCustomerName: (value: string) => void
   phoneNumber: string
   setPhoneNumber: (value: string) => void
+  notes: string
+  setNotes: (value: string) => void
   items: PosItem[]
   subtotal: number
   isSaving: boolean
@@ -21,16 +25,28 @@ export function PosCart(props: {
   onCreateOrder: () => void
 }) {
   const { t } = useDashboardUi()
-  const { customerName, setCustomerName, phoneNumber, setPhoneNumber, items, subtotal, isSaving, onUpdateQuantity, onCreateOrder } = props
+  const { saleOrigin, customerName, setCustomerName, phoneNumber, setPhoneNumber, notes, setNotes, items, subtotal, isSaving, onUpdateQuantity, onCreateOrder } = props
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Nueva venta</CardTitle>
+        <CardTitle className="text-base">
+          Nueva venta {saleOrigin === "pos" ? "POS" : saleOrigin === "manual-full" ? "manual full" : "manual"}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2"><Label htmlFor="pos-customer">Cliente</Label><Input id="pos-customer" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nombre del cliente" /></div>
         <div className="space-y-2"><Label htmlFor="pos-phone">Teléfono</Label><Input id="pos-phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Número de teléfono" /></div>
+        <div className="space-y-2">
+          <Label htmlFor="pos-notes">Notas</Label>
+          <Textarea
+            id="pos-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notas del pedido (opcional)"
+            rows={3}
+          />
+        </div>
         <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2"><span className="text-sm text-muted-foreground">Estado</span><span className="text-sm font-semibold">{t.orders.paid}</span></div>
 
         <div className="space-y-3">

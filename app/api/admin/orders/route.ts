@@ -19,7 +19,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json()
-    const { id, customerName, phoneNumber, items, status } = body ?? {}
+    const { id, customerName, phoneNumber, shippingFee, items, status } = body ?? {}
 
     if (!id) {
       return NextResponse.json({ error: "Missing order id" }, { status: 400 })
@@ -29,6 +29,9 @@ export async function PATCH(request: Request) {
     if (typeof customerName === "string") updatePayload.customer_name = customerName
     if (typeof phoneNumber === "string") updatePayload.phone_number = phoneNumber
     if (typeof status === "string") updatePayload.status = status
+    if (typeof shippingFee === "number" && !Number.isNaN(shippingFee)) {
+      updatePayload.shipping_fee = shippingFee
+    }
 
     if (Object.keys(updatePayload).length > 0) {
       const { error: orderError } = await supabaseAdmin
@@ -72,9 +75,22 @@ export async function PATCH(request: Request) {
         (sum, item) => sum + Number(item.price) * Number(item.quantity),
         0
       )
+
+      let effectiveShippingFee = 0
+      if (typeof shippingFee === "number" && !Number.isNaN(shippingFee)) {
+        effectiveShippingFee = shippingFee
+      } else {
+        const { data: existingOrder } = await supabaseAdmin
+          .from("orders")
+          .select("shipping_fee")
+          .eq("id", id)
+          .single()
+        effectiveShippingFee = Number(existingOrder?.shipping_fee ?? 0)
+      }
+
       const { error: totalError } = await supabaseAdmin
         .from("orders")
-        .update({ total: subtotal })
+        .update({ total: subtotal + effectiveShippingFee })
         .eq("id", id)
 
       if (totalError) {

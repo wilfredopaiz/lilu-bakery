@@ -22,6 +22,8 @@ export default function DashboardPedidosPage() {
     setEditCustomerName,
     editPhoneNumber,
     setEditPhoneNumber,
+    editShippingFee,
+    setEditShippingFee,
     editSubtotal,
     openEdit,
     updateEditQuantity,
@@ -38,15 +40,28 @@ export default function DashboardPedidosPage() {
   const [ordersPageSize, setOrdersPageSize] = useState(8)
   const [webOrdersPage, setWebOrdersPage] = useState(1)
   const [posOrdersPage, setPosOrdersPage] = useState(1)
+  const [manualOrdersPage, setManualOrdersPage] = useState(1)
 
-  const webOrders = useMemo(() => orders.filter((order) => order.origin !== "pos"), [orders])
-  const posOrders = useMemo(() => orders.filter((order) => order.origin === "pos"), [orders])
+  const webOrders = useMemo(
+    () => orders.filter((order) => order.origin !== "pos" && order.origin !== "manual"),
+    [orders]
+  )
+  const posOrders = useMemo(
+    () => orders.filter((order) => order.origin === "pos"),
+    [orders]
+  )
+  const manualOrders = useMemo(
+    () => orders.filter((order) => order.origin === "manual"),
+    [orders]
+  )
 
   const webOrdersTotalPages = Math.max(1, Math.ceil(webOrders.length / ordersPageSize))
   const posOrdersTotalPages = Math.max(1, Math.ceil(posOrders.length / ordersPageSize))
+  const manualOrdersTotalPages = Math.max(1, Math.ceil(manualOrders.length / ordersPageSize))
 
   const pagedWebOrders = webOrders.slice((webOrdersPage - 1) * ordersPageSize, webOrdersPage * ordersPageSize)
   const pagedPosOrders = posOrders.slice((posOrdersPage - 1) * ordersPageSize, posOrdersPage * ordersPageSize)
+  const pagedManualOrders = manualOrders.slice((manualOrdersPage - 1) * ordersPageSize, manualOrdersPage * ordersPageSize)
 
   const toggleOrderExpanded = (orderId: string) => {
     setExpandedOrders((prev) => (prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]))
@@ -65,6 +80,7 @@ export default function DashboardPedidosPage() {
           resetPages={() => {
             setWebOrdersPage(1)
             setPosOrdersPage(1)
+            setManualOrdersPage(1)
           }}
         />
       </div>
@@ -73,6 +89,7 @@ export default function DashboardPedidosPage() {
         <TabsList className="flex w-fit">
           <TabsTrigger value="web">Pedidos Web</TabsTrigger>
           <TabsTrigger value="pos">Ventas POS</TabsTrigger>
+          <TabsTrigger value="manual">Pedidos Manual</TabsTrigger>
         </TabsList>
 
         <TabsContent value="web" className="space-y-4">
@@ -90,7 +107,7 @@ export default function DashboardPedidosPage() {
             onChangeStatus={(orderId, status) => {
               void changeOrderStatus(orderId, status)
             }}
-            originLabel="Ecommerce"
+            onEditPos={(order) => openEdit(order)}
             page={webOrdersPage}
             totalPages={webOrdersTotalPages}
             onPrev={() => setWebOrdersPage((prev) => Math.max(1, prev - 1))}
@@ -106,7 +123,6 @@ export default function DashboardPedidosPage() {
             onChangeStatus={(orderId, status) => {
               void changeOrderStatus(orderId, status)
             }}
-            originLabel="POS"
             showPosActions
             onEditPos={(order) => openEdit(order)}
             onCancelPos={(order) => {
@@ -122,6 +138,30 @@ export default function DashboardPedidosPage() {
             onNext={() => setPosOrdersPage((prev) => Math.min(posOrdersTotalPages, prev + 1))}
           />
         </TabsContent>
+
+        <TabsContent value="manual" className="space-y-4">
+          <OrdersList
+            orders={pagedManualOrders}
+            expandedOrders={expandedOrders}
+            onToggleExpanded={toggleOrderExpanded}
+            onChangeStatus={(orderId, status) => {
+              void changeOrderStatus(orderId, status)
+            }}
+            showPosActions
+            onEditPos={(order) => openEdit(order)}
+            onCancelPos={(order) => {
+              setCancelPosOrderId(order.id)
+              setIsCancelPosDialogOpen(true)
+            }}
+            onReactivatePos={(order) => {
+              void reactivatePosOrder(order.id)
+            }}
+            page={manualOrdersPage}
+            totalPages={manualOrdersTotalPages}
+            onPrev={() => setManualOrdersPage((prev) => Math.max(1, prev - 1))}
+            onNext={() => setManualOrdersPage((prev) => Math.min(manualOrdersTotalPages, prev + 1))}
+          />
+        </TabsContent>
       </Tabs>
 
       <PosEditDialog
@@ -131,6 +171,8 @@ export default function DashboardPedidosPage() {
         setCustomerName={setEditCustomerName}
         phoneNumber={editPhoneNumber}
         setPhoneNumber={setEditPhoneNumber}
+        shippingFee={editShippingFee}
+        setShippingFee={setEditShippingFee}
         items={editItems}
         subtotal={editSubtotal}
         isSaving={isSavingPosOrder}

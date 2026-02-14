@@ -19,7 +19,7 @@ export function SalesCharts({ chartData }: { chartData: Array<Record<string, str
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Ventas por mes (L)</CardTitle>
-          <CardDescription>3 líneas: Ecommerce, POS y Total</CardDescription>
+          <CardDescription>4 líneas: Ecommerce, POS, Manual y Total</CardDescription>
         </CardHeader>
         <CardContent className="overflow-visible">
           <div className="h-64 w-full px-4">
@@ -38,15 +38,36 @@ export function SalesCharts({ chartData }: { chartData: Array<Record<string, str
                 <Line type="monotone" dataKey="pos" name="POS" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 4 }}>
                   <LabelList dataKey="pos" position="top" offset={10} formatter={(value: number) => formatPrice(Number(value))} />
                 </Line>
+                <Line type="monotone" dataKey="manual" name="Manual" stroke="#ec4899" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 4 }}>
+                  <LabelList dataKey="manual" position="top" offset={10} formatter={(value: number) => formatPrice(Number(value))} />
+                </Line>
               </ReLineChart>
             </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2 px-4">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#f59e0b" }} />
+              Total
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#2563eb" }} />
+              Ecommerce
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#10b981" }} />
+              POS
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#ec4899" }} />
+              Manual
+            </div>
           </div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Ventas por mes (Galletas vs Brownies)</CardTitle>
-          <CardDescription>Total Ecommerce + POS</CardDescription>
+          <CardDescription>Total Ecommerce + POS + Manual</CardDescription>
         </CardHeader>
         <CardContent className="overflow-visible">
           <div className="h-64 w-full px-4">
@@ -64,6 +85,16 @@ export function SalesCharts({ chartData }: { chartData: Array<Record<string, str
                 </Line>
               </ReLineChart>
             </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2 px-4">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#f59e0b" }} />
+              Galletas
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#6366f1" }} />
+              Brownies
+            </div>
           </div>
         </CardContent>
       </Card>

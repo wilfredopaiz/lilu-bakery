@@ -14,6 +14,7 @@ const LEGACY_TAB_REDIRECTS: Record<string, string> = {
   products: "/dashboard/productos",
   pos: "/dashboard/pos",
   orders: "/dashboard/pedidos",
+  expenses: "/dashboard/gastos",
   settings: "/dashboard/configuracion",
 }
 
@@ -34,8 +35,9 @@ export default function DashboardOverviewPage() {
 
   const now = new Date()
   const paidOrders = orders.filter((order) => order.status === "paid")
-  const paidEcommerceOrders = paidOrders.filter((order) => order.origin !== "pos")
+  const paidEcommerceOrders = paidOrders.filter((order) => order.origin !== "pos" && order.origin !== "manual")
   const paidPosOrders = paidOrders.filter((order) => order.origin === "pos")
+  const paidManualOrders = paidOrders.filter((order) => order.origin === "manual")
 
   const sameDay = (order: Order) => {
     const created = new Date(order.createdAt)
@@ -63,17 +65,23 @@ export default function DashboardOverviewPage() {
 
   const dayEcommerceOrders = paidEcommerceOrders.filter(sameDay)
   const dayPosOrders = paidPosOrders.filter(sameDay)
+  const dayManualOrders = paidManualOrders.filter(sameDay)
   const weekEcommerceOrders = paidEcommerceOrders.filter(inWeek)
   const weekPosOrders = paidPosOrders.filter(inWeek)
+  const weekManualOrders = paidManualOrders.filter(inWeek)
   const monthEcommerceOrders = paidEcommerceOrders.filter(sameMonth)
   const monthPosOrders = paidPosOrders.filter(sameMonth)
+  const monthManualOrders = paidManualOrders.filter(sameMonth)
 
   const dayEcommerceTotal = dayEcommerceOrders.reduce((sum, order) => sum + order.total, 0)
   const dayPosTotal = dayPosOrders.reduce((sum, order) => sum + order.total, 0)
+  const dayManualTotal = dayManualOrders.reduce((sum, order) => sum + order.total, 0)
   const weekEcommerceTotal = weekEcommerceOrders.reduce((sum, order) => sum + order.total, 0)
   const weekPosTotal = weekPosOrders.reduce((sum, order) => sum + order.total, 0)
+  const weekManualTotal = weekManualOrders.reduce((sum, order) => sum + order.total, 0)
   const monthEcommerceTotal = monthEcommerceOrders.reduce((sum, order) => sum + order.total, 0)
   const monthPosTotal = monthPosOrders.reduce((sum, order) => sum + order.total, 0)
+  const monthManualTotal = monthManualOrders.reduce((sum, order) => sum + order.total, 0)
 
   const monthLabels = Array.from({ length: 2 }, (_v, index) => {
     const date = new Date(now.getFullYear(), now.getMonth() - (1 - index), 1)
@@ -87,7 +95,8 @@ export default function DashboardOverviewPage() {
     }
     const ecommerce = paidEcommerceOrders.filter(inMonth).reduce((sum, order) => sum + order.total, 0)
     const pos = paidPosOrders.filter(inMonth).reduce((sum, order) => sum + order.total, 0)
-    return { label: monthInfo.label, ecommerce, pos, total: ecommerce + pos }
+    const manual = paidManualOrders.filter(inMonth).reduce((sum, order) => sum + order.total, 0)
+    return { label: monthInfo.label, ecommerce, pos, manual, total: ecommerce + pos + manual }
   })
 
   const categoryByProduct = new Map(productList.map((product) => [product.id, product.category]))
@@ -117,6 +126,7 @@ export default function DashboardOverviewPage() {
     month: entry.label,
     ecommerce: entry.ecommerce,
     pos: entry.pos,
+    manual: entry.manual,
     total: entry.total,
     cookies: categoryByMonth[index]?.cookies ?? 0,
     brownies: categoryByMonth[index]?.brownies ?? 0,
@@ -135,28 +145,34 @@ export default function DashboardOverviewPage() {
       <SalesSummaryCards
         dayEcommerceTotal={dayEcommerceTotal}
         dayPosTotal={dayPosTotal}
-        dayTotal={dayEcommerceTotal + dayPosTotal}
+        dayManualTotal={dayManualTotal}
+        dayTotal={dayEcommerceTotal + dayPosTotal + dayManualTotal}
         dayEcommerceCount={dayEcommerceOrders.length}
         dayPosCount={dayPosOrders.length}
+        dayManualCount={dayManualOrders.length}
         weekEcommerceTotal={weekEcommerceTotal}
         weekPosTotal={weekPosTotal}
-        weekTotal={weekEcommerceTotal + weekPosTotal}
+        weekManualTotal={weekManualTotal}
+        weekTotal={weekEcommerceTotal + weekPosTotal + weekManualTotal}
         weekEcommerceCount={weekEcommerceOrders.length}
         weekPosCount={weekPosOrders.length}
+        weekManualCount={weekManualOrders.length}
         monthEcommerceTotal={monthEcommerceTotal}
         monthPosTotal={monthPosTotal}
-        monthTotal={monthEcommerceTotal + monthPosTotal}
+        monthManualTotal={monthManualTotal}
+        monthTotal={monthEcommerceTotal + monthPosTotal + monthManualTotal}
         monthEcommerceCount={monthEcommerceOrders.length}
         monthPosCount={monthPosOrders.length}
+        monthManualCount={monthManualOrders.length}
       />
 
       <SalesCharts chartData={chartData} />
 
       <OrdersStatusCards
-        paidWeb={orders.filter((order) => order.origin !== "pos" && order.status === "paid").length}
-        pendingWeb={orders.filter((order) => order.origin !== "pos" && order.status === "pending").length}
-        abandonedWeb={orders.filter((order) => order.origin !== "pos" && order.status === "abandoned").length}
-        cancelledWeb={orders.filter((order) => order.origin !== "pos" && order.status === "cancelled").length}
+        paidWeb={orders.filter((order) => order.origin !== "pos" && order.origin !== "manual" && order.status === "paid").length}
+        pendingWeb={orders.filter((order) => order.origin !== "pos" && order.origin !== "manual" && order.status === "pending").length}
+        abandonedWeb={orders.filter((order) => order.origin !== "pos" && order.origin !== "manual" && order.status === "abandoned").length}
+        cancelledWeb={orders.filter((order) => order.origin !== "pos" && order.origin !== "manual" && order.status === "cancelled").length}
         monthPendingCount={monthPendingOrders.length}
         monthPendingTotal={monthPendingOrders.reduce((sum, order) => sum + order.total, 0)}
         monthCancelledCount={monthCancelledOrders.length}

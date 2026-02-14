@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Package, Settings, ShoppingCart } from "lucide-react"
+import { Package, Settings, ShoppingCart, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const ITEMS = [
@@ -11,6 +11,7 @@ const ITEMS = [
   { href: "/dashboard/productos", label: "Productos", icon: Package },
   { href: "/dashboard/pos", label: "POS", icon: ShoppingCart },
   { href: "/dashboard/pedidos", label: "Pedidos", icon: ShoppingCart },
+  { href: "/dashboard/gastos", label: "Gastos", icon: Wallet },
   { href: "/dashboard/configuracion", label: "Configuración", icon: Settings },
 ]
 

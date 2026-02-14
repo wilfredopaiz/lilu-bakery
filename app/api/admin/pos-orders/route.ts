@@ -12,8 +12,10 @@ const orderItemSchema = z.object({
 const orderSchema = z.object({
   customerName: z.string().optional(),
   phoneNumber: z.string().optional(),
+  notes: z.string().optional(),
   paymentMethod: z.string().min(1).default("pos"),
   currency: z.string().min(1).default("HNL"),
+  origin: z.enum(["pos", "manual"]).default("pos"),
   items: z.array(orderItemSchema).min(1),
 })
 
@@ -29,11 +31,14 @@ export async function POST(request: Request) {
     const {
       customerName,
       phoneNumber,
+      notes,
       paymentMethod,
       currency,
+      origin,
       items,
     } = parsed.data
-    const orderNumber = `POS-${Date.now().toString(36).toUpperCase()}`
+    const orderNumberPrefix = origin === "manual" ? "MAN" : "POS"
+    const orderNumber = `${orderNumberPrefix}-${Date.now().toString(36).toUpperCase()}`
     const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
     const { data: order, error: orderError } = await supabaseAdmin
@@ -46,8 +51,10 @@ export async function POST(request: Request) {
         status: "paid",
         payment_method: paymentMethod,
         total,
+        shipping_fee: 0,
         currency,
-        origin: "pos",
+        origin,
+        notes: notes?.trim() ? notes.trim() : null,
       })
       .select("id, order_number, total")
       .single()

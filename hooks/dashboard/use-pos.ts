@@ -12,6 +12,8 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
 
   const [customerName, setCustomerName] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
+  const [notes, setNotes] = useState("")
+  const [saleOrigin, setSaleOrigin] = useState<"pos" | "manual" | "manual-full">("pos")
   const [items, setItems] = useState<PosItem[]>([])
   const [isSavingPosOrder, setIsSavingPosOrder] = useState(false)
 
@@ -20,6 +22,7 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
   const [editItems, setEditItems] = useState<PosItem[]>([])
   const [editCustomerName, setEditCustomerName] = useState("")
   const [editPhoneNumber, setEditPhoneNumber] = useState("")
+  const [editShippingFee, setEditShippingFee] = useState(0)
 
   const [isCancelPosDialogOpen, setIsCancelPosDialogOpen] = useState(false)
   const [cancelPosOrderId, setCancelPosOrderId] = useState<string | null>(null)
@@ -59,7 +62,9 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
       await createPosOrder({
         customerName,
         phoneNumber,
+        notes,
         currency: "HNL",
+        origin: saleOrigin === "pos" ? "pos" : "manual",
         items: items.map((item) => ({
           productId: item.product.id,
           productName: item.product.name,
@@ -69,9 +74,19 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
       })
       setCustomerName("")
       setPhoneNumber("")
+      setNotes("")
       setItems([])
       await reloadOrders()
-      toast({ title: "Venta registrada", description: "La venta POS se guardó correctamente.", variant: "success" })
+      toast({
+        title: "Venta registrada",
+        description:
+          saleOrigin === "pos"
+            ? "La venta POS se guardó correctamente."
+            : saleOrigin === "manual-full"
+              ? "La venta manual full se guardó correctamente."
+              : "La venta manual se guardó correctamente.",
+        variant: "success",
+      })
       return true
     } catch {
       toast({ title: "Error al guardar", description: "No se pudo registrar la venta POS.", variant: "destructive" })
@@ -85,7 +100,20 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
     const parsed = order.items
       .map((item) => {
         const product = productList.find((p) => p.id === item.productId)
-        return product ? { product, quantity: item.quantity } : null
+        if (product) {
+          return { product, quantity: item.quantity }
+        }
+        return {
+          product: {
+            id: item.productId,
+            name: item.productName,
+            description: "Producto sin catálogo",
+            price: item.price,
+            image: "/placeholder.svg",
+            category: "cookies",
+          },
+          quantity: item.quantity,
+        }
       })
       .filter(Boolean) as PosItem[]
 
@@ -93,6 +121,7 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
     setEditItems(parsed)
     setEditCustomerName(order.customerName)
     setEditPhoneNumber(order.phoneNumber)
+    setEditShippingFee(Number(order.shippingFee ?? 0))
     setIsEditingPosOrder(true)
   }
 
@@ -112,6 +141,7 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
         id: editOrder.id,
         customerName: editCustomerName || "Cliente POS",
         phoneNumber: editPhoneNumber || "0",
+        shippingFee: Number(editShippingFee) || 0,
         items: editItems.map((item) => ({
           productId: item.product.id,
           productName: item.product.name,
@@ -162,6 +192,10 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
     setCustomerName,
     phoneNumber,
     setPhoneNumber,
+    notes,
+    setNotes,
+    saleOrigin,
+    setSaleOrigin,
     items,
     subtotal,
     isSavingPosOrder,
@@ -176,6 +210,8 @@ export function usePos(params: { productList: Product[]; reloadOrders: () => Pro
     setEditCustomerName,
     editPhoneNumber,
     setEditPhoneNumber,
+    editShippingFee,
+    setEditShippingFee,
     editSubtotal,
     openEdit,
     updateEditQuantity,

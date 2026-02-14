@@ -15,13 +15,29 @@ export function PosEditDialog(props: {
   setCustomerName: (value: string) => void
   phoneNumber: string
   setPhoneNumber: (value: string) => void
+  shippingFee: number
+  setShippingFee: (value: number) => void
   items: PosItem[]
   subtotal: number
   isSaving: boolean
   onUpdateQuantity: (productId: string, quantity: number) => void
   onSave: () => void
 }) {
-  const { open, onOpenChange, customerName, setCustomerName, phoneNumber, setPhoneNumber, items, subtotal, isSaving, onUpdateQuantity, onSave } = props
+  const {
+    open,
+    onOpenChange,
+    customerName,
+    setCustomerName,
+    phoneNumber,
+    setPhoneNumber,
+    shippingFee,
+    setShippingFee,
+    items,
+    subtotal,
+    isSaving,
+    onUpdateQuantity,
+    onSave,
+  } = props
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,6 +49,17 @@ export function PosEditDialog(props: {
         <div className="space-y-4">
           <div className="space-y-2"><Label htmlFor="pos-edit-name">Cliente</Label><Input id="pos-edit-name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
           <div className="space-y-2"><Label htmlFor="pos-edit-phone">Teléfono</Label><Input id="pos-edit-phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} /></div>
+          <div className="space-y-2">
+            <Label htmlFor="pos-edit-shipping-fee">Envío (L)</Label>
+            <Input
+              id="pos-edit-shipping-fee"
+              type="number"
+              min={0}
+              step="1"
+              value={shippingFee}
+              onChange={(e) => setShippingFee(Number(e.target.value) || 0)}
+            />
+          </div>
 
           <div className="space-y-3">
             <p className="text-sm font-medium">Productos</p>
@@ -52,7 +79,20 @@ export function PosEditDialog(props: {
             ))}
           </div>
 
-          <div className="border-t border-border pt-3 flex items-center justify-between"><span className="text-sm text-muted-foreground">Total</span><span className="text-sm font-semibold">{formatPrice(subtotal)}</span></div>
+          <div className="border-t border-border pt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Subtotal</span>
+              <span className="text-sm font-semibold">{formatPrice(subtotal)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Envío</span>
+              <span className="text-sm font-semibold">{formatPrice(shippingFee)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total</span>
+              <span className="text-sm font-semibold">{formatPrice(subtotal + shippingFee)}</span>
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" className="bg-transparent" onClick={() => onOpenChange(false)}>Cancelar</Button>

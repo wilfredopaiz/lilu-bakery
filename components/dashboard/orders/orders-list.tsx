@@ -9,7 +9,6 @@ export function OrdersList(props: {
   expandedOrders: string[]
   onToggleExpanded: (orderId: string) => void
   onChangeStatus: (orderId: string, status: "paid" | "pending" | "abandoned" | "cancelled") => void
-  originLabel: "Ecommerce" | "POS"
   showPosActions?: boolean
   onEditPos?: (order: Order) => void
   onCancelPos?: (order: Order) => void
@@ -24,7 +23,6 @@ export function OrdersList(props: {
     expandedOrders,
     onToggleExpanded,
     onChangeStatus,
-    originLabel,
     showPosActions,
     onEditPos,
     onCancelPos,
@@ -45,7 +43,6 @@ export function OrdersList(props: {
             expanded={expandedOrders.includes(order.id)}
             onToggle={() => onToggleExpanded(order.id)}
             onChangeStatus={(status) => onChangeStatus(order.id, status)}
-            originLabel={originLabel}
             showPosActions={showPosActions}
             onEditPos={() => onEditPos?.(order)}
             onCancelPos={() => onCancelPos?.(order)}

@@ -21,14 +21,15 @@ export function OrderCardCollapsible(props: {
   expanded: boolean
   onToggle: () => void
   onChangeStatus: (status: "paid" | "pending" | "abandoned" | "cancelled") => void
-  originLabel: "Ecommerce" | "POS"
   showPosActions?: boolean
   onEditPos?: () => void
   onCancelPos?: () => void
   onReactivatePos?: () => void
 }) {
   const { t } = useDashboardUi()
-  const { order, expanded, onToggle, onChangeStatus, originLabel, showPosActions, onEditPos, onCancelPos, onReactivatePos } = props
+  const { order, expanded, onToggle, onChangeStatus, showPosActions, onEditPos, onCancelPos, onReactivatePos } = props
+  const originLabel =
+    order.origin === "manual" ? "Manual" : order.origin === "pos" ? "POS" : "Ecommerce"
 
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
@@ -91,9 +92,13 @@ export function OrderCardCollapsible(props: {
                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onChangeStatus("cancelled") }}>{t.orders.cancelled}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  {onEditPos && (
+                    <Button variant="outline" size="sm" className="bg-transparent" onClick={(e) => { e.stopPropagation(); onEditPos() }}>
+                      Editar
+                    </Button>
+                  )}
                   {showPosActions && (
                     <>
-                      <Button variant="outline" size="sm" className="bg-transparent" onClick={(e) => { e.stopPropagation(); onEditPos?.() }}>Editar</Button>
                       {order.status === "cancelled" ? (
                         <Button variant="outline" size="sm" className="bg-transparent" onClick={(e) => { e.stopPropagation(); onReactivatePos?.() }}>Reactivar</Button>
                       ) : (
@@ -126,6 +131,10 @@ export function OrderCardCollapsible(props: {
                     <TableRow>
                       <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">Subtotal</TableCell>
                       <TableCell className="text-right font-medium text-muted-foreground">{formatPrice(order.items.reduce((sum, item) => sum + item.price * item.quantity, 0))}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-right font-medium text-muted-foreground">Envío</TableCell>
+                      <TableCell className="text-right font-medium text-muted-foreground">{formatPrice(Number(order.shippingFee ?? 0))}</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell colSpan={3} className="text-right font-bold">{t.orders.total}</TableCell>
