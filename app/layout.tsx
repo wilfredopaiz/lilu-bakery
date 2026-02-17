@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Playfair_Display, Geist } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css"
 import { CartProvider } from "@/components/cart-provider"
 import { LanguageProvider } from "@/components/language-provider"
@@ -50,6 +51,7 @@ export default function RootLayout({
         </LanguageProvider>
         <Toaster />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
