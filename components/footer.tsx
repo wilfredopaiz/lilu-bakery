@@ -43,15 +43,37 @@ export function Footer() {
 
           <div>
             <h4 className="font-semibold mb-4">{t.footer.connect}</h4>
-            <div className="flex space-x-4">
-              <a
-                href="https://www.instagram.com/lilus_bakery.hn?igsh=MTc0eDU3bDVycTZ4Yg=="
-                className="text-muted-foreground hover:text-primary transition-colors"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
+            <div className="space-y-4">
+              <div className="flex space-x-4">
+                <a
+                  href="https://www.instagram.com/lilus_bakery.hn?igsh=MTc0eDU3bDVycTZ4Yg=="
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+              </div>
+              <div>
+                <h5 className="font-medium mb-2 text-sm">Legal</h5>
+                <ul className="space-y-1 text-sm">
+                  <li>
+                    <Link href="/privacidad" className="text-muted-foreground hover:text-primary transition-colors">
+                      Política de privacidad
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/politica-cookies" className="text-muted-foreground hover:text-primary transition-colors">
+                      Política de cookies
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/terminos" className="text-muted-foreground hover:text-primary transition-colors">
+                      Términos y condiciones
+                    </Link>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

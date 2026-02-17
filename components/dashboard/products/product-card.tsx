@@ -64,7 +64,7 @@ export function ProductCard(props: {
               {isHidden && <Badge variant="outline" className="border-muted-foreground/40 text-muted-foreground">Oculto</Badge>}
               {(product.channels ?? []).includes("ecommerce") && <Badge variant="outline">Ecommerce</Badge>}
               {(product.channels ?? []).includes("pos") && <Badge variant="outline">POS</Badge>}
-              {product.isSeasonal && product.seasonKey === "valentin" && <Badge variant="secondary" className="bg-pink-100 text-pink-800">San Valentín</Badge>}
+              {product.isSeasonal && product.seasonKey === "valentin" && <Badge variant="secondary" className="bg-pink-100 text-pink-800">Especiales de Febrero</Badge>}
             </div>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -138,7 +138,7 @@ export function ProductCard(props: {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2"><Checkbox id="edit-seasonal-valentin" checked={Boolean(editingProduct.isSeasonal)} onCheckedChange={(checked) => setEditingProduct({ ...editingProduct, isSeasonal: Boolean(checked), seasonKey: checked ? "valentin" : null })} /><Label htmlFor="edit-seasonal-valentin">San Valentín</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox id="edit-seasonal-valentin" checked={Boolean(editingProduct.isSeasonal)} onCheckedChange={(checked) => setEditingProduct({ ...editingProduct, isSeasonal: Boolean(checked), seasonKey: checked ? "valentin" : null })} /><Label htmlFor="edit-seasonal-valentin">Especiales de Febrero</Label></div>
                     <div className="flex items-center gap-2"><Checkbox id="edit-featured" checked={Boolean(editingProduct.featured)} onCheckedChange={(checked) => setEditingProduct({ ...editingProduct, featured: Boolean(checked) })} /><Label htmlFor="edit-featured">Featured</Label></div>
                   </div>
                 )}

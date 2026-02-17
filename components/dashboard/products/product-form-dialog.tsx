@@ -82,7 +82,7 @@ export function ProductFormDialog(props: {
           </div>
           <div className="flex items-center gap-2">
             <Checkbox id="new-seasonal-valentin" checked={Boolean(newProduct.isSeasonal)} onCheckedChange={(checked) => setNewProduct({ ...newProduct, isSeasonal: Boolean(checked), seasonKey: checked ? "valentin" : null })} />
-            <Label htmlFor="new-seasonal-valentin">San Valentín</Label>
+            <Label htmlFor="new-seasonal-valentin">Especiales de Febrero</Label>
           </div>
         </div>
         <DialogFooter>

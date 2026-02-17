@@ -11,7 +11,7 @@ import {
   type Expense,
 } from "@/lib/dashboard/services/expenses"
 
-export function useExpenses() {
+export function useExpenses(enabled = true) {
   const { toast } = useToast()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(false)
@@ -34,8 +34,10 @@ export function useExpenses() {
   }, [toast])
 
   useEffect(() => {
-    reloadExpenses()
-  }, [reloadExpenses])
+    if (enabled) {
+      reloadExpenses()
+    }
+  }, [enabled, reloadExpenses])
 
   const addExpense = async (input: {
     expenseDate: string

@@ -14,6 +14,7 @@ const LEGACY_TAB_REDIRECTS: Record<string, string> = {
   products: "/dashboard/productos",
   pos: "/dashboard/pos",
   orders: "/dashboard/pedidos",
+  reports: "/dashboard/informes",
   expenses: "/dashboard/gastos",
   settings: "/dashboard/configuracion",
 }

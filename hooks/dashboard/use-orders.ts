@@ -11,7 +11,6 @@ export function useOrders(enabled = true) {
   const [isLoadingOrders, setIsLoadingOrders] = useState(false)
 
   const reloadOrders = useCallback(async () => {
-    if (!enabled) return
     setIsLoadingOrders(true)
     try {
       const data = await fetchOrders()

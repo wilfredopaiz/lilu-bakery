@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Home",
-    "sanValentin": "San Valentin",
+    "sanValentin": "February Specials",
     "cookies": "Cookies",
     "brownies": "Brownies",
     "login": "Login"
@@ -31,10 +31,10 @@
     "premiumQualityDesc": "Only the finest ingredients make it into our recipes"
   },
   "seasonal": {
-    "valentinBadge": "Seasonal Collection",
-    "valentinTitle": "San Valentin",
-    "valentinDesc": "Limited treats for a sweeter February. Small batches, special flavors, only for this season.",
-    "valentinCta": "View Collection",
+    "valentinBadge": "Seasonal Specials",
+    "valentinTitle": "February Specials",
+    "valentinDesc": "Enjoy our February specials all month long. Small batches and seasonal flavors.",
+    "valentinCta": "View Specials",
     "empty": "No seasonal products available yet."
   },
   "category": {

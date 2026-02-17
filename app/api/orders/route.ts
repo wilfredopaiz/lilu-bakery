@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import { sendOrderCreatedNotification } from "@/lib/notifications/telegram"
 
 const orderItemSchema = z.object({
   productId: z.string().min(1),
@@ -81,6 +82,42 @@ export async function POST(request: Request) {
 
     if (itemsError) {
       return NextResponse.json({ error: "Failed to create order items" }, { status: 500 })
+    }
+
+    try {
+      const notificationResult = await sendOrderCreatedNotification({
+        orderNumber: order.order_number,
+        origin: "ecommerce",
+        customerName,
+        phoneNumber,
+        status: "pending",
+        currency,
+        total,
+        shippingFee,
+        shippingDate,
+        notes: notes?.trim() || null,
+        createdAt: new Date().toISOString(),
+        items: items.map((item) => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          price: item.price,
+          lineTotal: item.price * item.quantity,
+        })),
+      })
+
+      if (notificationResult.failureCount > 0) {
+        console.error("[telegram-notify] Partial/failed delivery", {
+          orderNumber: order.order_number,
+          successCount: notificationResult.successCount,
+          failureCount: notificationResult.failureCount,
+          failures: notificationResult.failures.slice(0, 5),
+        })
+      }
+    } catch (error) {
+      console.error("[telegram-notify] Unexpected error in notification flow", {
+        orderNumber: order.order_number,
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
 
     return NextResponse.json({

@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Inicio",
-    "sanValentin": "San Valentín",
+    "sanValentin": "Especiales de Febrero",
     "cookies": "Cookies",
     "brownies": "Brownies",
     "login": "Iniciar Sesión"
@@ -31,10 +31,10 @@
     "premiumQualityDesc": "Solo los mejores ingredientes entran en nuestras recetas"
   },
   "seasonal": {
-    "valentinBadge": "Colección de temporada",
-    "valentinTitle": "San Valentín",
-    "valentinDesc": "Edición limitada para un febrero más dulce. Lotes pequeños y sabores especiales solo por temporada.",
-    "valentinCta": "Ver colección",
+    "valentinBadge": "Especiales de temporada",
+    "valentinTitle": "Especiales de Febrero",
+    "valentinDesc": "Disfruta nuestros especiales de febrero durante todo el mes. Lotes pequenos y sabores de temporada.",
+    "valentinCta": "Ver especiales",
     "empty": "Aún no hay productos de temporada."
   },
   "category": {
@@ -72,7 +72,7 @@
     "phone": "Número de Teléfono",
     "phonePlaceholder": "Tu número de teléfono",
     "shippingDate": "Fecha de envío",
-    "shippingNotes": "Notas de envío",
+    "shippingNotes": "Notas de Envío (Por ahora solo envíos a San Pedro Sula)",
     "shippingNotesPlaceholder": "Detalles de entrega",
     "shippingNotesHelper": "• Ubicación de entrega\n• Nombre y número de quien recibe el pedido\n• Horario de entrega (mañana 8:30am-11am o tarde 2-4pm)",
     "paymentMethod": "Método de Pago",

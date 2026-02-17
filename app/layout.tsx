@@ -6,6 +6,7 @@ import "./globals.css"
 import { CartProvider } from "@/components/cart-provider"
 import { LanguageProvider } from "@/components/language-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { GlobalNotices } from "@/components/global-notices"
 
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" })
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
@@ -42,7 +43,10 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable} ${playfair.variable}`}>
       <body className={`font-sans antialiased`}>
         <LanguageProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            {children}
+            <GlobalNotices />
+          </CartProvider>
         </LanguageProvider>
         <Toaster />
         <Analytics />
