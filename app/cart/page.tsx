@@ -10,16 +10,36 @@ import { Button } from "@/components/ui/button"
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total, clearCart } = useCart()
   const { t } = useLanguage()
-  const shippingFee = 120
+  const [shippingFee, setShippingFee] = useState(120)
   const totalWithShipping = total + shippingFee
 
   useEffect(() => {
     window.scrollTo(0, 0)
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadConfig = async () => {
+      const response = await fetch("/api/admin/configs")
+      if (!response.ok) return
+      const payload = await response.json()
+      if (!isMounted) return
+      if (payload?.config) {
+        setShippingFee(Number(payload.config.shipping_fee ?? 120))
+      }
+    }
+
+    loadConfig()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   if (items.length === 0) {
