@@ -9,6 +9,38 @@ import { OrdersFilters } from "@/components/dashboard/orders/orders-filters"
 import { OrdersList } from "@/components/dashboard/orders/orders-list"
 import { PosEditDialog } from "@/components/dashboard/pos/pos-edit-dialog"
 import { PosCancelDialog } from "@/components/dashboard/pos/pos-cancel-dialog"
+import type { Order } from "@/lib/types"
+
+function getTodayStart() {
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  return now
+}
+
+function sortOrdersForDashboard(orders: Order[]) {
+  const todayStart = getTodayStart()
+
+  return orders.slice().sort((a, b) => {
+    const aHasShipping = Boolean(a.shippingDate)
+    const bHasShipping = Boolean(b.shippingDate)
+    const aShippingTime = aHasShipping ? new Date(`${a.shippingDate}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
+    const bShippingTime = bHasShipping ? new Date(`${b.shippingDate}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
+    const aUpcomingPaid = a.status === "paid" && aHasShipping && aShippingTime >= todayStart.getTime()
+    const bUpcomingPaid = b.status === "paid" && bHasShipping && bShippingTime >= todayStart.getTime()
+    const aCompleted = a.status === "completed"
+    const bCompleted = b.status === "completed"
+
+    if (aUpcomingPaid && bUpcomingPaid) {
+      if (aShippingTime !== bShippingTime) return aShippingTime - bShippingTime
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    }
+
+    if (aUpcomingPaid !== bUpcomingPaid) return aUpcomingPaid ? -1 : 1
+    if (aCompleted !== bCompleted) return aCompleted ? 1 : -1
+
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
+}
 
 export default function DashboardPedidosPage() {
   const { orders, changeOrderStatus, reloadOrders } = useOrders(true)
@@ -43,15 +75,15 @@ export default function DashboardPedidosPage() {
   const [manualOrdersPage, setManualOrdersPage] = useState(1)
 
   const webOrders = useMemo(
-    () => orders.filter((order) => order.origin !== "pos" && order.origin !== "manual"),
+    () => sortOrdersForDashboard(orders.filter((order) => order.origin !== "pos" && order.origin !== "manual")),
     [orders]
   )
   const posOrders = useMemo(
-    () => orders.filter((order) => order.origin === "pos"),
+    () => sortOrdersForDashboard(orders.filter((order) => order.origin === "pos")),
     [orders]
   )
   const manualOrders = useMemo(
-    () => orders.filter((order) => order.origin === "manual"),
+    () => sortOrdersForDashboard(orders.filter((order) => order.origin === "manual")),
     [orders]
   )
 
@@ -94,14 +126,7 @@ export default function DashboardPedidosPage() {
 
         <TabsContent value="web" className="space-y-4">
           <OrdersList
-            orders={pagedWebOrders
-              .slice()
-              .sort((a, b) => {
-                if (!a.shippingDate && !b.shippingDate) return 0
-                if (!a.shippingDate) return 1
-                if (!b.shippingDate) return -1
-                return a.shippingDate.localeCompare(b.shippingDate)
-              })}
+            orders={pagedWebOrders}
             expandedOrders={expandedOrders}
             onToggleExpanded={toggleOrderExpanded}
             onChangeStatus={(orderId, status) => {

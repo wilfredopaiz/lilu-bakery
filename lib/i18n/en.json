@@ -148,6 +148,7 @@
     "pending": "Pending Payment",
     "abandoned": "Abandoned",
     "cancelled": "Cancelled",
+    "completed": "Completed",
     "products": "products",
     "orderDetail": "Order Details",
     "product": "Product",
@@ -157,7 +158,8 @@
     "total": "Total",
     "changeStatus": "Change Status",
     "markAsPaid": "Mark as Paid",
-    "markAsPending": "Mark as Pending"
+    "markAsPending": "Mark as Pending",
+    "markAsCompleted": "Mark as Completed"
   },
   "language": {
     "spanish": "Español",

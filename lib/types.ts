@@ -26,7 +26,7 @@ export interface Order {
   orderNumber?: string
   customerName: string
   phoneNumber: string
-  status: "pending" | "paid" | "abandoned" | "cancelled"
+  status: "pending" | "paid" | "abandoned" | "cancelled" | "completed"
   origin?: "ecommerce" | "pos" | "manual"
   items: OrderItem[]
   total: number

@@ -8,7 +8,7 @@ export function OrdersList(props: {
   orders: Order[]
   expandedOrders: string[]
   onToggleExpanded: (orderId: string) => void
-  onChangeStatus: (orderId: string, status: "paid" | "pending" | "abandoned" | "cancelled") => void
+  onChangeStatus: (orderId: string, status: "paid" | "pending" | "abandoned" | "cancelled" | "completed") => void
   showPosActions?: boolean
   onEditPos?: (order: Order) => void
   onCancelPos?: (order: Order) => void

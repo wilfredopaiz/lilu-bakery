@@ -16,11 +16,35 @@ function getTotalProducts(order: Order) {
   return order.items.reduce((sum, item) => sum + item.quantity, 0)
 }
 
+function getShippingPill(order: Order): { text: string; tone: "info" | "danger" } | null {
+  if (!order.shippingDate) return null
+  if (order.status === "completed" || order.status === "cancelled" || order.status === "abandoned") return null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const shipping = new Date(`${order.shippingDate}T00:00:00`)
+  if (Number.isNaN(shipping.getTime())) return null
+  if (shipping < today) {
+    if (order.status === "paid") {
+      return { text: "Fecha de envío vencida: marcar como completado", tone: "danger" }
+    }
+    return null
+  }
+
+  const dayMs = 24 * 60 * 60 * 1000
+  const diffDays = Math.round((shipping.getTime() - today.getTime()) / dayMs)
+
+  if (diffDays === 0) return { text: "Se debe enviar hoy", tone: "info" }
+  if (diffDays === 1) return { text: "Envío en 1 día", tone: "info" }
+  return { text: `Envío en ${diffDays} días`, tone: "info" }
+}
+
 export function OrderCardCollapsible(props: {
   order: Order
   expanded: boolean
   onToggle: () => void
-  onChangeStatus: (status: "paid" | "pending" | "abandoned" | "cancelled") => void
+  onChangeStatus: (status: "paid" | "pending" | "abandoned" | "cancelled" | "completed") => void
   showPosActions?: boolean
   onEditPos?: () => void
   onCancelPos?: () => void
@@ -30,6 +54,27 @@ export function OrderCardCollapsible(props: {
   const { order, expanded, onToggle, onChangeStatus, showPosActions, onEditPos, onCancelPos, onReactivatePos } = props
   const originLabel =
     order.origin === "manual" ? "Manual" : order.origin === "pos" ? "POS" : "Ecommerce"
+  const shippingPill = getShippingPill(order)
+  const statusLabel =
+    order.status === "paid"
+      ? t.orders.paid
+      : order.status === "pending"
+        ? t.orders.pending
+        : order.status === "abandoned"
+          ? t.orders.abandoned
+          : order.status === "cancelled"
+            ? t.orders.cancelled
+            : t.orders.completed
+  const statusClassName =
+    order.status === "paid"
+      ? "bg-green-500 hover:bg-green-600 text-white"
+      : order.status === "pending"
+        ? "bg-amber-500 hover:bg-amber-600 text-white"
+        : order.status === "abandoned"
+          ? "bg-slate-400 hover:bg-slate-500 text-white"
+          : order.status === "cancelled"
+            ? "bg-red-500 hover:bg-red-600 text-white"
+            : "bg-blue-600 hover:bg-blue-700 text-white"
 
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
@@ -42,14 +87,32 @@ export function OrderCardCollapsible(props: {
                   <CardTitle className="text-base">{order.customerName}</CardTitle>
                   <CardDescription>{order.phoneNumber}{order.orderNumber ? ` · ${order.orderNumber}` : ` · ${order.id}`}</CardDescription>
                 </div>
-                {order.shippingDate && <div className="text-xs text-muted-foreground">Envío: {new Date(`${order.shippingDate}T00:00:00`).toLocaleDateString("es-HN")}</div>}
+                {order.shippingDate && (
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground">
+                      Envío: {new Date(`${order.shippingDate}T00:00:00`).toLocaleDateString("es-HN")}
+                    </div>
+                    {shippingPill && (
+                      <Badge
+                        variant="secondary"
+                        className={
+                          shippingPill.tone === "danger"
+                            ? "text-xs bg-red-100 text-red-800 hover:bg-red-100"
+                            : "text-xs bg-blue-100 text-blue-800 hover:bg-blue-100"
+                        }
+                      >
+                        {shippingPill.text}
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <Badge
                   variant="secondary"
-                  className={order.status === "paid" ? "bg-green-500 hover:bg-green-600 text-white" : order.status === "pending" ? "bg-amber-500 hover:bg-amber-600 text-white" : order.status === "abandoned" ? "bg-slate-400 hover:bg-slate-500 text-white" : "bg-red-500 hover:bg-red-600 text-white"}
+                  className={statusClassName}
                 >
-                  {order.status === "paid" ? t.orders.paid : order.status === "pending" ? t.orders.pending : order.status === "abandoned" ? t.orders.abandoned : t.orders.cancelled}
+                  {statusLabel}
                 </Badge>
                 <Badge variant="outline">{originLabel}</Badge>
                 <span className="text-sm text-muted-foreground">{getTotalProducts(order)} {t.orders.products}</span>
@@ -81,15 +144,16 @@ export function OrderCardCollapsible(props: {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm" className="bg-transparent">
-                        {order.status === "paid" ? t.orders.paid : order.status === "pending" ? t.orders.pending : order.status === "abandoned" ? t.orders.abandoned : t.orders.cancelled}
+                        {statusLabel}
                         <ChevronDown className="h-4 w-4 ml-2" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onChangeStatus("paid") }}>{t.orders.markAsPaid}</DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onChangeStatus("pending") }}>{t.orders.markAsPending}</DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onChangeStatus("abandoned") }}>{t.orders.abandoned}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onChangeStatus("completed") }}>{t.orders.markAsCompleted}</DropdownMenuItem>
                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onChangeStatus("cancelled") }}>{t.orders.cancelled}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onChangeStatus("abandoned") }}>{t.orders.abandoned}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onChangeStatus("pending") }}>{t.orders.markAsPending}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   {onEditPos && (

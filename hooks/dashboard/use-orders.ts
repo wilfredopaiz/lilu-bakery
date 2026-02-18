@@ -30,7 +30,7 @@ export function useOrders(enabled = true) {
 
   const changeOrderStatus = async (
     orderId: string,
-    status: "paid" | "pending" | "abandoned" | "cancelled"
+    status: "paid" | "pending" | "abandoned" | "cancelled" | "completed"
   ) => {
     try {
       await updateOrder({ id: orderId, status })
