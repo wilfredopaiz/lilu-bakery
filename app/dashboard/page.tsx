@@ -35,7 +35,7 @@ export default function DashboardOverviewPage() {
   }, [searchParams, router])
 
   const now = new Date()
-  const paidOrders = orders.filter((order) => order.status === "paid")
+  const paidOrders = orders.filter((order) => order.status === "paid" || order.status === "completed")
   const paidEcommerceOrders = paidOrders.filter((order) => order.origin !== "pos" && order.origin !== "manual")
   const paidPosOrders = paidOrders.filter((order) => order.origin === "pos")
   const paidManualOrders = paidOrders.filter((order) => order.origin === "manual")
