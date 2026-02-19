@@ -9,6 +9,7 @@ export function OrdersList(props: {
   expandedOrders: string[]
   onToggleExpanded: (orderId: string) => void
   onChangeStatus: (orderId: string, status: "paid" | "pending" | "abandoned" | "cancelled" | "completed") => void
+  onSaveInternalNotes: (orderId: string, internalNotes: string) => Promise<boolean>
   showPosActions?: boolean
   onEditPos?: (order: Order) => void
   onCancelPos?: (order: Order) => void
@@ -23,6 +24,7 @@ export function OrdersList(props: {
     expandedOrders,
     onToggleExpanded,
     onChangeStatus,
+    onSaveInternalNotes,
     showPosActions,
     onEditPos,
     onCancelPos,
@@ -43,6 +45,7 @@ export function OrdersList(props: {
             expanded={expandedOrders.includes(order.id)}
             onToggle={() => onToggleExpanded(order.id)}
             onChangeStatus={(status) => onChangeStatus(order.id, status)}
+            onSaveInternalNotes={(internalNotes) => onSaveInternalNotes(order.id, internalNotes)}
             showPosActions={showPosActions}
             onEditPos={() => onEditPos?.(order)}
             onCancelPos={() => onCancelPos?.(order)}

@@ -19,6 +19,7 @@ export function mapOrder(order: any) {
     shippingDate: order.shipping_date,
     shippingFee: order.shipping_fee,
     notes: order.notes,
+    internalNotes: order.internal_notes,
     items: (order.order_items || []).map((item: any) => ({
       productId: item.product_id,
       productName: item.product_name,

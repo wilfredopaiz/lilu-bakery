@@ -34,4 +34,5 @@ export interface Order {
   shippingDate?: string | null
   shippingFee?: number
   notes?: string | null
+  internalNotes?: string | null
 }

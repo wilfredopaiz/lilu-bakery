@@ -62,12 +62,33 @@ export function useOrders(enabled = true) {
     }
   }
 
+  const updateInternalNotes = async (orderId: string, internalNotes: string) => {
+    try {
+      await updateOrder({ id: orderId, internalNotes })
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId ? { ...order, internalNotes: internalNotes.trim() || null } : order
+        )
+      )
+      toast({ title: "Notas internas actualizadas", description: "Los cambios se guardaron correctamente." })
+      return true
+    } catch {
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar las notas internas.",
+        variant: "destructive",
+      })
+      return false
+    }
+  }
+
   return {
     orders,
     isLoadingOrders,
     reloadOrders,
     changeOrderStatus,
     updatePosOrder,
+    updateInternalNotes,
   }
 }
 

@@ -38,12 +38,12 @@ export function PosCart(props: {
         <div className="space-y-2"><Label htmlFor="pos-customer">Cliente</Label><Input id="pos-customer" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nombre del cliente" /></div>
         <div className="space-y-2"><Label htmlFor="pos-phone">Teléfono</Label><Input id="pos-phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Número de teléfono" /></div>
         <div className="space-y-2">
-          <Label htmlFor="pos-notes">Notas</Label>
+          <Label htmlFor="pos-notes">Notas internas</Label>
           <Textarea
             id="pos-notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Notas del pedido (opcional)"
+            placeholder="Notas internas del pedido (opcional)"
             rows={3}
           />
         </div>

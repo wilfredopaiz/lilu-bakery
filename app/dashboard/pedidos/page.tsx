@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useOrders } from "@/hooks/dashboard/use-orders"
+import { useOrdersPaginated } from "@/hooks/dashboard/use-orders-paginated"
 import { useProducts } from "@/hooks/dashboard/use-products"
 import { usePos } from "@/hooks/dashboard/use-pos"
 import { OrdersFilters } from "@/components/dashboard/orders/orders-filters"
@@ -10,6 +10,8 @@ import { OrdersList } from "@/components/dashboard/orders/orders-list"
 import { PosEditDialog } from "@/components/dashboard/pos/pos-edit-dialog"
 import { PosCancelDialog } from "@/components/dashboard/pos/pos-cancel-dialog"
 import type { Order } from "@/lib/types"
+import { updateOrder } from "@/lib/dashboard/services/orders"
+import { useToast } from "@/hooks/use-toast"
 
 function getTodayStart() {
   const now = new Date()
@@ -43,8 +45,58 @@ function sortOrdersForDashboard(orders: Order[]) {
 }
 
 export default function DashboardPedidosPage() {
-  const { orders, changeOrderStatus, reloadOrders } = useOrders(true)
+  const { toast } = useToast()
   const { productList } = useProducts()
+
+  const [activeTab, setActiveTab] = useState<"web" | "pos" | "manual">("web")
+  const [ordersPageSize, setOrdersPageSize] = useState(8)
+  const [webOrdersPage, setWebOrdersPage] = useState(1)
+  const [posOrdersPage, setPosOrdersPage] = useState(1)
+  const [manualOrdersPage, setManualOrdersPage] = useState(1)
+
+  const webOrdersState = useOrdersPaginated({ origin: "web", page: webOrdersPage, pageSize: ordersPageSize })
+  const posOrdersState = useOrdersPaginated({ origin: "pos", page: posOrdersPage, pageSize: ordersPageSize })
+  const manualOrdersState = useOrdersPaginated({ origin: "manual", page: manualOrdersPage, pageSize: ordersPageSize })
+
+  const reloadActiveTab = async () => {
+    if (activeTab === "web") return webOrdersState.reloadOrders()
+    if (activeTab === "pos") return posOrdersState.reloadOrders()
+    return manualOrdersState.reloadOrders()
+  }
+
+  const changeOrderStatus = async (
+    orderId: string,
+    status: "paid" | "pending" | "abandoned" | "cancelled" | "completed"
+  ) => {
+    try {
+      await updateOrder({ id: orderId, status })
+      await reloadActiveTab()
+      return true
+    } catch {
+      toast({
+        title: "Error al actualizar",
+        description: "No se pudo cambiar el estado de la venta.",
+        variant: "destructive",
+      })
+      return false
+    }
+  }
+
+  const updateInternalNotes = async (orderId: string, internalNotes: string) => {
+    try {
+      await updateOrder({ id: orderId, internalNotes })
+      await reloadActiveTab()
+      return true
+    } catch {
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar las notas internas.",
+        variant: "destructive",
+      })
+      return false
+    }
+  }
+
   const {
     isSavingPosOrder,
     isEditingPosOrder,
@@ -66,34 +118,24 @@ export default function DashboardPedidosPage() {
     setCancelPosOrderId,
     cancelPosOrder,
     reactivatePosOrder,
-  } = usePos({ productList, reloadOrders })
+  } = usePos({ productList, reloadOrders: reloadActiveTab })
 
   const [expandedOrders, setExpandedOrders] = useState<string[]>([])
-  const [ordersPageSize, setOrdersPageSize] = useState(8)
-  const [webOrdersPage, setWebOrdersPage] = useState(1)
-  const [posOrdersPage, setPosOrdersPage] = useState(1)
-  const [manualOrdersPage, setManualOrdersPage] = useState(1)
 
   const webOrders = useMemo(
-    () => sortOrdersForDashboard(orders.filter((order) => order.origin !== "pos" && order.origin !== "manual")),
-    [orders]
+    () => sortOrdersForDashboard(webOrdersState.orders),
+    [webOrdersState.orders]
   )
   const posOrders = useMemo(
-    () => sortOrdersForDashboard(orders.filter((order) => order.origin === "pos")),
-    [orders]
+    () => sortOrdersForDashboard(posOrdersState.orders),
+    [posOrdersState.orders]
   )
   const manualOrders = useMemo(
-    () => sortOrdersForDashboard(orders.filter((order) => order.origin === "manual")),
-    [orders]
+    () => sortOrdersForDashboard(manualOrdersState.orders),
+    [manualOrdersState.orders]
   )
 
-  const webOrdersTotalPages = Math.max(1, Math.ceil(webOrders.length / ordersPageSize))
-  const posOrdersTotalPages = Math.max(1, Math.ceil(posOrders.length / ordersPageSize))
-  const manualOrdersTotalPages = Math.max(1, Math.ceil(manualOrders.length / ordersPageSize))
-
-  const pagedWebOrders = webOrders.slice((webOrdersPage - 1) * ordersPageSize, webOrdersPage * ordersPageSize)
-  const pagedPosOrders = posOrders.slice((posOrdersPage - 1) * ordersPageSize, posOrdersPage * ordersPageSize)
-  const pagedManualOrders = manualOrders.slice((manualOrdersPage - 1) * ordersPageSize, manualOrdersPage * ordersPageSize)
+  const totalOrders = webOrdersState.totalCount + posOrdersState.totalCount + manualOrdersState.totalCount
 
   const toggleOrderExpanded = (orderId: string) => {
     setExpandedOrders((prev) => (prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]))
@@ -104,7 +146,7 @@ export default function DashboardPedidosPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold">Ventas</h1>
-          <p className="text-muted-foreground text-sm">{orders.length} pedidos en total</p>
+          <p className="text-muted-foreground text-sm">{totalOrders} pedidos en total</p>
         </div>
         <OrdersFilters
           pageSize={ordersPageSize}
@@ -117,7 +159,7 @@ export default function DashboardPedidosPage() {
         />
       </div>
 
-      <Tabs defaultValue="web" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "web" | "pos" | "manual")} className="space-y-4">
         <TabsList className="flex w-fit">
           <TabsTrigger value="web">Pedidos Web</TabsTrigger>
           <TabsTrigger value="pos">Ventas POS</TabsTrigger>
@@ -126,28 +168,30 @@ export default function DashboardPedidosPage() {
 
         <TabsContent value="web" className="space-y-4">
           <OrdersList
-            orders={pagedWebOrders}
+            orders={webOrders}
             expandedOrders={expandedOrders}
             onToggleExpanded={toggleOrderExpanded}
             onChangeStatus={(orderId, status) => {
               void changeOrderStatus(orderId, status)
             }}
+            onSaveInternalNotes={(orderId, internalNotes) => updateInternalNotes(orderId, internalNotes)}
             onEditPos={(order) => openEdit(order)}
             page={webOrdersPage}
-            totalPages={webOrdersTotalPages}
+            totalPages={webOrdersState.totalPages}
             onPrev={() => setWebOrdersPage((prev) => Math.max(1, prev - 1))}
-            onNext={() => setWebOrdersPage((prev) => Math.min(webOrdersTotalPages, prev + 1))}
+            onNext={() => setWebOrdersPage((prev) => Math.min(webOrdersState.totalPages, prev + 1))}
           />
         </TabsContent>
 
         <TabsContent value="pos" className="space-y-4">
           <OrdersList
-            orders={pagedPosOrders}
+            orders={posOrders}
             expandedOrders={expandedOrders}
             onToggleExpanded={toggleOrderExpanded}
             onChangeStatus={(orderId, status) => {
               void changeOrderStatus(orderId, status)
             }}
+            onSaveInternalNotes={(orderId, internalNotes) => updateInternalNotes(orderId, internalNotes)}
             showPosActions
             onEditPos={(order) => openEdit(order)}
             onCancelPos={(order) => {
@@ -158,20 +202,21 @@ export default function DashboardPedidosPage() {
               void reactivatePosOrder(order.id)
             }}
             page={posOrdersPage}
-            totalPages={posOrdersTotalPages}
+            totalPages={posOrdersState.totalPages}
             onPrev={() => setPosOrdersPage((prev) => Math.max(1, prev - 1))}
-            onNext={() => setPosOrdersPage((prev) => Math.min(posOrdersTotalPages, prev + 1))}
+            onNext={() => setPosOrdersPage((prev) => Math.min(posOrdersState.totalPages, prev + 1))}
           />
         </TabsContent>
 
         <TabsContent value="manual" className="space-y-4">
           <OrdersList
-            orders={pagedManualOrders}
+            orders={manualOrders}
             expandedOrders={expandedOrders}
             onToggleExpanded={toggleOrderExpanded}
             onChangeStatus={(orderId, status) => {
               void changeOrderStatus(orderId, status)
             }}
+            onSaveInternalNotes={(orderId, internalNotes) => updateInternalNotes(orderId, internalNotes)}
             showPosActions
             onEditPos={(order) => openEdit(order)}
             onCancelPos={(order) => {
@@ -182,9 +227,9 @@ export default function DashboardPedidosPage() {
               void reactivatePosOrder(order.id)
             }}
             page={manualOrdersPage}
-            totalPages={manualOrdersTotalPages}
+            totalPages={manualOrdersState.totalPages}
             onPrev={() => setManualOrdersPage((prev) => Math.max(1, prev - 1))}
-            onNext={() => setManualOrdersPage((prev) => Math.min(manualOrdersTotalPages, prev + 1))}
+            onNext={() => setManualOrdersPage((prev) => Math.min(manualOrdersState.totalPages, prev + 1))}
           />
         </TabsContent>
       </Tabs>

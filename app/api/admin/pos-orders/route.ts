@@ -54,7 +54,8 @@ export async function POST(request: Request) {
         shipping_fee: 0,
         currency,
         origin,
-        notes: notes?.trim() ? notes.trim() : null,
+        notes: null,
+        internal_notes: notes?.trim() ? notes.trim() : null,
       })
       .select("id, order_number, total")
       .single()

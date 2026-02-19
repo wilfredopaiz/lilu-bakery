@@ -16,18 +16,20 @@ const bankAccounts = [
   {
     bank: "BAC Credomatic",
     accountNumber: "749486971",
+    accountHolder: "Carmen Ondina Paiz Paz",
   },
   {
     bank: "Banco del País (Banpaís)",
     accountNumber: "210510058086",
+    accountHolder: "Carmen Ondina Paiz Paz",
   },
   {
     bank: "Banco Atlántida",
     accountNumber: "2020065703",
+    accountHolder: "Carmen Ondina Paiz Paz",
   },
 ]
 
-const accountHolder = "Carmen Ondina Paiz Paz"
 const whatsappNumber = "+504 9842-1924"
 const whatsappLink = "https://wa.me/50498421924"
 
@@ -98,6 +100,9 @@ function ConfirmationContent() {
                         <p className="text-sm text-muted-foreground mt-1">
                           {t.confirmation.accountNumber}: <span className="font-mono font-semibold text-foreground">{account.accountNumber}</span>
                         </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {t.confirmation.accountHolder}: <span className="font-semibold text-foreground">{account.accountHolder}</span>
+                        </p>
                       </div>
                       <Button
                         variant="ghost"
@@ -116,11 +121,6 @@ function ConfirmationContent() {
                 ))}
               </div>
 
-              {/* Account Holder */}
-              <div className="mt-4 p-4 bg-background rounded-lg border border-amber-200">
-                <p className="text-sm text-muted-foreground">{t.confirmation.accountHolder}:</p>
-                <p className="font-semibold text-foreground">{accountHolder}</p>
-              </div>
             </CardContent>
           </Card>
 
