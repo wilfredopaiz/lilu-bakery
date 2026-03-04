@@ -43,6 +43,18 @@ function getShippingPill(order: Order): { text: string; tone: "info" | "danger" 
   return { text: `Envío en ${diffDays} días`, tone: "info" }
 }
 
+function formatCreatedAt(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return date.toLocaleString("es-HN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
 export function OrderCardCollapsible(props: {
   order: Order
   expanded: boolean
@@ -66,6 +78,9 @@ export function OrderCardCollapsible(props: {
 
   const originLabel =
     order.origin === "manual" ? "Manual" : order.origin === "pos" ? "POS" : "Ecommerce"
+  const normalizedPhone = (order.phoneNumber ?? "").trim()
+  const hasValidPhone = normalizedPhone !== "" && normalizedPhone !== "0" && normalizedPhone.replace(/\D/g, "").length > 0
+  const shouldHidePhone = order.origin === "pos" && !hasValidPhone
   const shippingPill = getShippingPill(order)
   const statusLabel =
     order.status === "paid"
@@ -99,10 +114,15 @@ export function OrderCardCollapsible(props: {
                   <div>
                     <CardTitle className="text-base">{order.customerName}</CardTitle>
                     <CardDescription>
-                      {order.phoneNumber}
-                      {order.orderNumber ? ` · ${order.orderNumber}` : ` · ${order.id}`}
+                      {shouldHidePhone ? "" : order.phoneNumber}
+                      {order.orderNumber ? (shouldHidePhone ? `${order.orderNumber}` : ` · ${order.orderNumber}`) : (shouldHidePhone ? `${order.id}` : ` · ${order.id}`)}
                     </CardDescription>
                   </div>
+                  {(order.origin === "pos" || order.origin === "manual") && (
+                    <div className="text-xs text-muted-foreground">
+                      Creado: {formatCreatedAt(order.createdAt)}
+                    </div>
+                  )}
                   {order.shippingDate && (
                     <div className="flex items-center gap-2">
                       <div className="text-xs text-muted-foreground">
@@ -147,7 +167,7 @@ export function OrderCardCollapsible(props: {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <h4 className="font-medium">{t.orders.orderDetail}</h4>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {order.phoneNumber !== "0" && (
+                    {hasValidPhone && (
                       <Button variant="outline" size="sm" className="bg-transparent" asChild>
                         <Link
                           href={`https://wa.me/${order.phoneNumber.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${order.customerName}, seguimos tu pedido. Orden: ${order.orderNumber ?? order.id}`)}`}
